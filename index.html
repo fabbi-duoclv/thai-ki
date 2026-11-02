@@ -1,0 +1,1157 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Sơ đồ chăm sóc vợ mang thai</title>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f2f5f7; --panel:#ffffff; --ink:#1b2733; --muted:#66737f; --line:#d8e0e6; --accent:#1f9d8a;
+  --shadow:0 4px 14px rgba(20,40,60,.12);
+  color-scheme:light;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#10151d; --panel:#192230; --ink:#e8edf3; --muted:#9aa6b4; --line:#2b3544; --accent:#38c3ad;
+    --shadow:0 4px 14px rgba(0,0,0,.5);
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#10151d; --panel:#192230; --ink:#e8edf3; --muted:#9aa6b4; --line:#2b3544; --accent:#38c3ad;
+  --shadow:0 4px 14px rgba(0,0,0,.5);
+  color-scheme:dark;
+}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--ink);font-family:"Be Vietnam Pro",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;font-size:14px;line-height:1.4}
+button,input,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+.app{height:100%;display:flex;flex-direction:column}
+header{padding:12px 16px 10px;border-bottom:1px solid var(--line);background:var(--panel);display:flex;flex-direction:column;gap:10px}
+.top{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+h1{font-size:18px;font-weight:700;margin:0;letter-spacing:-.01em;flex:1 1 220px;min-width:0}
+.prog{display:flex;align-items:center;gap:10px;flex:0 1 260px;min-width:160px}
+.bar{flex:1;height:8px;border-radius:99px;background:var(--line);overflow:hidden}
+.bar i{display:block;height:100%;width:0;background:var(--accent);border-radius:99px;transition:width .25s}
+.prog span{font-size:12px;color:var(--muted);white-space:nowrap;font-variant-numeric:tabular-nums}
+.ctrl{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.seg button{border:0;background:transparent;padding:6px 14px;font-weight:500}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+.btn{border:1px solid var(--line);background:var(--panel);border-radius:8px;padding:5px 11px;font-size:13px}
+.btn:hover{border-color:var(--muted)}
+.sp{flex:1}
+.zoom{display:inline-flex;align-items:center;gap:4px}
+.zoom .btn{padding:5px 9px;min-width:32px}
+.zoom output{min-width:42px;text-align:center;font-size:12px;color:var(--muted)}
+
+#view{flex:1;min-height:0;overflow:auto;position:relative;-webkit-overflow-scrolling:touch}
+#view.map{cursor:grab}
+#view.map.drag{cursor:grabbing;user-select:none}
+.sizer{position:relative}
+.canvas{position:absolute;left:0;top:0;transform-origin:0 0}
+.canvas svg{position:absolute;left:0;top:0;overflow:visible;pointer-events:none}
+.canvas path{fill:none;stroke-width:2;stroke-linecap:round;opacity:.75}
+
+/* nodes */
+.node{
+  position:absolute;width:268px;height:44px;box-sizing:border-box;
+  display:flex;align-items:center;gap:6px;padding:0 8px 0 6px;
+  background:color-mix(in srgb,var(--c) 10%,var(--panel));
+  border:1px solid color-mix(in srgb,var(--c) 35%,var(--line));
+  border-left:4px solid var(--c);border-radius:10px;
+}
+.node:hover,.node:focus-within{z-index:6}
+.node.sel{outline:2px solid var(--c);outline-offset:1px;z-index:6}
+.node.root{background:var(--ink);color:var(--bg);border-color:var(--ink);border-radius:14px;--c:var(--ink);font-weight:600}
+.node.root .bd{background:color-mix(in srgb,var(--bg) 22%,transparent);color:var(--bg)}
+.node.root input[type=checkbox]{accent-color:#2fb8a1}
+input[type=checkbox]{width:16px;height:16px;margin:0;flex:none;accent-color:var(--c,var(--accent));cursor:pointer}
+.tx{flex:1;min-width:0;font-size:13px;line-height:1.25;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;overflow-wrap:anywhere}
+.done>.tx,.done .tx{text-decoration:line-through;color:var(--muted)}
+.edit{flex:1;min-width:0;border:1px solid var(--accent);border-radius:6px;padding:4px 6px;background:var(--panel);color:var(--ink);font-size:13px}
+.bd{flex:none;font-size:11px;padding:1px 7px;border-radius:99px;background:color-mix(in srgb,var(--c) 18%,transparent);font-variant-numeric:tabular-nums;white-space:nowrap}
+.bd.full{background:var(--c);color:#fff}
+.tg{flex:none;width:20px;height:20px;border:0;border-radius:5px;background:transparent;padding:0;line-height:1;font-size:12px;color:inherit}
+.tg:hover{background:color-mix(in srgb,var(--c) 20%,transparent)}
+.tg.ph{visibility:hidden}
+
+/* toolbar */
+.tb{position:absolute;left:0;bottom:100%;padding-bottom:4px;display:none;z-index:7}
+.node:hover .tb,.node.sel .tb,.node:focus-within .tb{display:block}
+.tbi{display:flex;gap:2px;background:var(--panel);border:1px solid var(--line);border-radius:9px;padding:2px;box-shadow:var(--shadow);color:var(--ink);font-weight:400}
+.tbi button{border:0;background:transparent;border-radius:6px;padding:3px 8px;font-size:12px;white-space:nowrap}
+.tbi button:hover{background:color-mix(in srgb,var(--accent) 16%,transparent)}
+.tbi button.danger:hover{background:color-mix(in srgb,#d9423f 20%,transparent);color:#d9423f}
+
+/* checklist */
+.list{max-width:780px;margin:0 auto;padding:16px 12px 80px}
+.list ul{list-style:none;margin:0;padding:0}
+.list .row{
+  position:relative;display:flex;align-items:center;gap:8px;min-height:38px;padding:4px 8px;border-radius:8px;
+  border-left:3px solid var(--c);margin:2px 0;
+}
+.list .row:hover,.list .row.sel{background:color-mix(in srgb,var(--c) 10%,var(--panel))}
+.list .row .tx{display:block;-webkit-line-clamp:unset;font-size:14px}
+.list .row.top{font-weight:600}
+.list .row.root{font-weight:700;font-size:15px}
+.list .tb{position:static;padding:0;display:none}
+.list .row:hover .tb,.list .row.sel .tb,.list .row:focus-within .tb{display:block}
+.list .tbi{box-shadow:none}
+.addtop{margin:12px 0 0 8px}
+.dot{position:absolute;top:4px;right:5px;width:6px;height:6px;border-radius:50%;background:var(--c);opacity:.7;pointer-events:none}
+.node.root .dot{background:var(--bg)}
+.list .row .dot{top:6px;right:4px}
+.tip{position:fixed;z-index:60;max-width:300px;background:var(--ink);color:var(--bg);padding:10px 12px;border-radius:10px;box-shadow:var(--shadow);font-size:13px;line-height:1.45;pointer-events:none;display:none}
+.tip b{display:block;margin-bottom:3px;font-weight:600}
+dialog textarea.note{height:130px;font-family:inherit;font-size:14px}
+/* FAQ */
+.faq{max-width:780px;margin:0 auto;padding:16px 12px 80px}
+.fq-bar{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.fq-search{flex:1 1 220px;min-width:0;border:1px solid var(--line);border-radius:8px;padding:7px 10px;background:var(--panel);color:var(--ink)}
+.fq-count{margin:10px 2px;color:var(--muted);font-size:12px}
+.fq-item{border:1px solid var(--line);border-radius:12px;background:var(--panel);margin-bottom:8px;overflow:hidden}
+.fq-q{all:unset;box-sizing:border-box;display:flex;gap:10px;align-items:flex-start;width:100%;padding:12px 14px;cursor:pointer;font-weight:600;font-size:14.5px;line-height:1.4}
+.fq-q:hover{background:color-mix(in srgb,var(--accent) 7%,transparent)}
+.fq-q:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+.fq-n{color:var(--accent);font-variant-numeric:tabular-nums;min-width:24px}
+.fq-qt{flex:1}
+.fq-chev{color:var(--muted);font-weight:400;font-size:18px;line-height:1.1}
+.fq-body{padding:0 14px 12px 48px}
+.fq-a{white-space:pre-wrap;line-height:1.65;font-size:14px;max-width:68ch;margin:0}
+.fq-a.emptya{color:var(--muted);font-style:italic}
+.fq-acts{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap}
+.fq-acts button{border:1px solid var(--line);background:transparent;border-radius:7px;padding:3px 10px;font-size:12px}
+.fq-acts button:hover{border-color:var(--muted)}
+.fq-acts button.danger:hover{color:#d9423f;border-color:#d9423f}
+.fq-acts button.primary{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.fq-item.editing{padding:12px 14px;border-color:var(--accent)}
+.fq-item.editing .edit{display:block;width:100%;box-sizing:border-box;font-size:14px;font-weight:600;margin-bottom:8px;padding:6px 8px}
+.fq-a-in{display:block;width:100%;box-sizing:border-box;border:1px solid var(--line);border-radius:8px;padding:8px;background:var(--bg);color:var(--ink);font:inherit;font-size:14px;line-height:1.5;resize:vertical}
+.fq-hint{font-size:12px;color:var(--muted);margin-top:6px}
+@media (max-width:560px){.fq-body{padding-left:14px}}
+.empty{padding:40px 24px;color:var(--muted);text-align:center}
+
+/* toast + dialog */
+#toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(20px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:9px 14px;border-radius:10px;display:none;gap:12px;align-items:center;box-shadow:var(--shadow);z-index:50;max-width:90vw;font-size:13px}
+#toast.on{display:flex}
+#toast button{border:0;background:transparent;color:inherit;font-weight:700;text-decoration:underline;padding:0}
+dialog{border:1px solid var(--line);border-radius:14px;background:var(--panel);color:var(--ink);padding:18px;width:min(560px,92vw)}
+dialog::backdrop{background:rgba(0,0,0,.45)}
+dialog h2{margin:0 0 6px;font-size:16px}
+dialog p{margin:0 0 10px;color:var(--muted);font-size:13px}
+dialog textarea{width:100%;box-sizing:border-box;height:220px;border:1px solid var(--line);border-radius:8px;background:var(--bg);padding:8px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px;resize:vertical}
+dialog .acts{display:flex;gap:8px;margin-top:12px;justify-content:flex-end;flex-wrap:wrap}
+.msg{min-height:18px;font-size:12px;color:var(--muted);margin-top:6px}
+@media (max-width:560px){ h1{font-size:16px} }
+@media (prefers-reduced-motion:reduce){ .bar i{transition:none} }
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="top">
+      <h1 id="title"></h1>
+      <div class="prog" aria-live="polite"><div class="bar"><i id="barfill"></i></div><span id="progtxt"></span></div>
+    </div>
+    <div class="ctrl">
+      <div class="seg" role="group" aria-label="Chế độ xem">
+        <button type="button" id="tabMap" aria-pressed="true">Sơ đồ</button>
+        <button type="button" id="tabList" aria-pressed="false">Checklist</button>
+        <button type="button" id="tabFaq" aria-pressed="false">FAQ</button>
+      </div>
+      <button type="button" class="btn" id="expandAll">Mở rộng tất cả</button>
+      <button type="button" class="btn" id="collapseAll">Thu gọn</button>
+      <div class="zoom" id="zoomBox">
+        <button type="button" class="btn" id="zOut" aria-label="Thu nhỏ">−</button>
+        <output id="zVal">100%</output>
+        <button type="button" class="btn" id="zIn" aria-label="Phóng to">+</button>
+      </div>
+      <span class="sp"></span>
+      <button type="button" class="btn" id="backup">Sao lưu / nạp dữ liệu</button>
+      <button type="button" class="btn" id="reset">Đặt lại mẫu</button>
+    </div>
+  </header>
+  <main id="view" class="map"></main>
+</div>
+
+<div id="toast" role="status"><span id="toastTxt"></span><button type="button" id="toastBtn"></button></div>
+
+<div id="tip" class="tip" role="tooltip"></div>
+
+<dialog id="noteDlg">
+  <h2 id="noteTitle">Ghi chú</h2>
+  <p>Mô tả ngắn hoặc ý nghĩa của mục này. Khi rê chuột lên mục khoảng 5 giây, nội dung sẽ hiện ra.</p>
+  <textarea id="noteTxt" class="note" maxlength="600" spellcheck="false"></textarea>
+  <div class="acts">
+    <button type="button" class="btn" id="noteCancel">Hủy</button>
+    <button type="button" class="btn" id="noteSave">Lưu ghi chú</button>
+  </div>
+</dialog>
+
+<dialog id="dlg">
+  <h2>Sao lưu / nạp dữ liệu</h2>
+  <p>Sao chép đoạn văn bản bên dưới để lưu lại. Muốn nạp lại, dán dữ liệu đã lưu vào ô này rồi bấm Nạp dữ liệu.</p>
+  <textarea id="dlgTxt" spellcheck="false"></textarea>
+  <div class="msg" id="dlgMsg"></div>
+  <div class="acts">
+    <button type="button" class="btn" id="dlgCopy">Sao chép</button>
+    <button type="button" class="btn" id="dlgLoad">Nạp dữ liệu</button>
+    <button type="button" class="btn" id="dlgClose">Đóng</button>
+  </div>
+</dialog>
+
+<script>
+(function(){
+'use strict';
+var KEY='mindmap-cham-soc-vo-mang-thai-v2';
+var BR=['#1f9d8a','#5b6bd6','#c2478f','#d29112','#2f8fd0','#5c9a3a','#8a5bd0','#d9566b'];
+var W=268,H=44,GX=64,ROW=56,PADX=32,PADY=52;
+
+var TIP_DELAY=5000;
+var DESC={
+'Dự trù chi phí mức trung bình: khoảng 45–80 triệu':'Ước tính cho gia đình ở Hà Nội hoặc TP.HCM, khám ở bệnh viện công hoặc phòng khám dịch vụ, sinh thường ở khu dịch vụ bệnh viện công. Ở tỉnh thường thấp hơn; bệnh viện tư, quốc tế có thể cao gấp nhiều lần. Giá thay đổi theo thời điểm và từng nơi, hãy hỏi trực tiếp nơi dự định khám và sinh.',
+'Khám thai định kỳ 10–12 lần: 3–7 triệu':'Bệnh viện công khoảng 200–350 nghìn/lần, phòng khám hoặc bệnh viện tư khoảng 500 nghìn–1,2 triệu/lần (khám và siêu âm cơ bản). Thai nguy cơ cao sẽ khám nhiều lần hơn.',
+'Siêu âm hình thái, 4D (khoảng 3 lần): 1–2 triệu':'Siêu âm 4D khoảng 300–500 nghìn/lần ở viện công, cao hơn ở phòng khám tư. Thường làm ở các mốc đo độ mờ da gáy, hình thái (18–22 tuần) và quý 3 (30–32 tuần).',
+'Sàng lọc dị tật (Double/Triple hoặc NIPT): 1–5 triệu':'Double hoặc Triple test khoảng 400 nghìn–1,2 triệu. NIPT khoảng 2,5–10 triệu tùy gói cơ bản hay mở rộng. Bác sĩ sẽ tư vấn nên làm loại nào.',
+'Xét nghiệm máu, nước tiểu, đường huyết, tiêm phòng: 2–4 triệu':'Ước tính cho các xét nghiệm định kỳ, nghiệm pháp đường huyết và các mũi tiêm phòng trong thai kỳ. Một phần có thể được BHYT chi trả.',
+'Vitamin, vi chất cả thai kỳ: 2,5–5 triệu':'Ước tính khoảng 300–600 nghìn/tháng tùy loại bác sĩ kê. Không tự mua thêm loại không được chỉ định.',
+'Sinh thường khu dịch vụ bệnh viện công: 15–20 triệu':'Ví dụ tại Bệnh viện Phụ sản Hà Nội, sinh thường khu dịch vụ khoảng 12–20 triệu tùy loại giường. Nếu sinh khu thường có BHYT, chi phí có thể chỉ khoảng 3–5 triệu cộng tiền giường, nhiều nơi khuyên chuẩn bị khoảng 10 triệu. Bệnh viện thường yêu cầu tạm ứng khi nhập viện.',
+'Dự phòng sinh mổ: cộng thêm 10–15 triệu':'Sinh mổ khu dịch vụ bệnh viện công lớn khoảng 20–35 triệu và nằm viện lâu hơn. Bệnh viện tư cao cấp hoặc quốc tế khoảng 30–60 triệu trở lên. Nên dự phòng khoản này kể cả khi định sinh thường.',
+'Đồ sơ sinh, túi đồ đi sinh: 5–10 triệu':'Ước tính cho quần áo, tã, khăn, bình, đồ tắm cho bé và đồ cho mẹ. Đồ lớn như xe đẩy, ghế ô tô, nôi tính riêng, có thể mua dần hoặc nhận lại từ người thân.',
+'3 tháng đầu (tã, đồ dùng, khám bé, vắc xin dịch vụ): 5–15 triệu':'Ước tính, chênh lệch nhiều tùy bé bú mẹ hoàn toàn hay dùng sữa công thức, và có tiêm vắc xin dịch vụ hay không. Vắc xin trong chương trình tiêm chủng mở rộng được miễn phí.',
+'Quỹ phát sinh: khoảng 10 triệu':'Cho các tình huống ngoài dự kiến như nằm viện dưỡng thai, bé cần chăm sóc đặc biệt, chi phí đi lại, thuê người hỗ trợ sau sinh.',
+'Khoản được nhận (nếu đóng BHXH bắt buộc)':'Áp dụng khi mẹ đủ điều kiện hưởng thai sản (thường là đóng BHXH bắt buộc từ đủ 6 tháng trong 12 tháng trước khi sinh). Quy định có thể thay đổi, hãy kiểm tra với cơ quan BHXH hoặc phòng nhân sự.',
+'Trợ cấp một lần: 5,06 triệu/con (sinh từ 1/7/2026)':'Bằng 2 lần mức lương cơ sở tại tháng sinh; từ 1/7/2026 lương cơ sở là 2,53 triệu. Nếu vợ không đủ điều kiện nhưng chồng đóng BHXH, chồng có thể được nhận khoản này. Người đóng BHXH tự nguyện có khoản trợ cấp riêng thấp hơn (khoảng 2 triệu/con). Theo Luật Dân số 2025, một số trường hợp (như sinh đủ hai con trước 35 tuổi, sống ở địa phương có mức sinh thấp) có thể được hỗ trợ thêm; hỏi UBND phường, xã về thời điểm và thủ tục.',
+'Mẹ nghỉ 6 tháng, hưởng 100% lương bình quân đóng BHXH':'Tiền thai sản mỗi tháng bằng 100% mức bình quân tiền lương đóng BHXH của 6 tháng gần nhất trước khi nghỉ. Từ 1/7/2026, sinh con thứ hai được nghỉ 7 tháng.',
+'Chồng nghỉ 5 ngày (sinh thường), 7 ngày (sinh mổ)':'Chồng đóng BHXH được nghỉ hưởng chế độ khi vợ sinh: 5 ngày làm việc nếu sinh thường; 7 ngày nếu sinh mổ hoặc sinh con dưới 32 tuần; nhiều hơn khi sinh đôi trở lên. Từ 1/7/2026, vợ sinh con thứ hai thì chồng được nghỉ 10 ngày làm việc. Hỏi phòng nhân sự về thời hạn nghỉ và hồ sơ.',
+'BHYT chi trả một phần chi phí khám và sinh':'Khám và sinh đúng quy định được BHYT chi trả theo mức hưởng ghi trên thẻ. Phòng dịch vụ, chọn bác sĩ và dịch vụ ngoài danh mục phải tự trả. Hỏi kỹ bệnh viện cần giấy tờ gì để dùng BHYT.',
+'Mốc thời gian chuẩn bị':'Chia nhỏ việc chuẩn bị theo tuần thai để không dồn vào phút cuối. Các mốc chỉ mang tính tham khảo, hãy điều chỉnh theo lịch của bác sĩ và thực tế của gia đình.',
+'Tuần 12–20: chọn bệnh viện, hỏi chi phí và chính sách cho người nhà':'So sánh khoảng cách, chi phí trọn gói, chất lượng, có cho người nhà vào phòng sinh không, có khoa sơ sinh không. Nên theo dõi thai và sinh ở cùng một nơi để bệnh viện đã có hồ sơ.',
+'Tuần 20–28: tìm hiểu sinh thường, sinh mổ; đặt chỗ lớp tiền sản':'Tìm hiểu chỉ định, ưu nhược điểm và thời gian hồi phục của từng cách sinh. Lớp tiền sản thường học vào 3 tháng cuối và có thể kín chỗ nên đặt sớm.',
+'Tuần 28–34: học lớp tiền sản, lập kế hoạch sinh với bác sĩ':'Học về chuyển dạ, kỹ thuật thở, cho con bú, chăm sóc sơ sinh. Hỏi bác sĩ về phương pháp sinh dự kiến, người được vào phòng sinh, giảm đau và các tình huống có thể phải mổ.',
+'Tuần 34–36: xong túi đồ đi sinh, đi thử đường đến bệnh viện':'Chuẩn bị xong túi đồ và giấy tờ, để chỗ dễ lấy. Đi thử đường vào các giờ khác nhau để biết mất bao lâu và biết cổng vào khoa sản ban đêm.',
+'Từ tuần 37: sẵn sàng bất cứ lúc nào, hạn chế đi xa':'Từ tuần 37, em bé sinh ra không còn bị xem là sinh non, nên có thể chuyển dạ bất cứ lúc nào. Xe đủ xăng, điện thoại đầy pin, người đưa đón sẵn sàng, tránh đi xa.',
+'Dấu hiệu chuyển dạ thật':'Chuyển dạ thường bắt đầu từ từ và các dấu hiệu sớm có thể kéo dài vài ngày. Biết phân biệt cơn gò giả với cơn co thật giúp tránh đi viện quá sớm hoặc quá muộn.',
+'Cơn co thật: đều, mạnh dần, dày dần, không hết khi nghỉ':'Cơn co chuyển dạ ngày càng dài hơn, mạnh hơn và dày hơn khi chuyển dạ tiến triển. Thường đau từ lưng lan ra phía trước bụng và không giảm khi đổi tư thế hay nghỉ ngơi.',
+'Cơn gò giả (Braxton Hicks): thường không đau, không đều':'Là những cơn bụng căng cứng ngắn, thưa, thường không đau hoặc chỉ khó chịu, không mạnh dần theo thời gian. Hay gặp hơn khi gần ngày sinh. Thường dịu đi khi đổi tư thế, nghỉ ngơi hoặc uống nước.',
+'Ra nhớt hồng hoặc lẫn ít máu (show)':'Thường là dấu hiệu sớm: chuyển dạ có thể bắt đầu sau vài giờ hoặc vài ngày. Nếu ra máu đỏ nhiều (hơn vài vệt) thì cần đi khám ngay.',
+'Đau lưng âm ỉ, buồn đi vệ sinh nhiều':'Các dấu hiệu sớm khác, có thể xuất hiện trong vài ngày trước khi chuyển dạ rõ ràng.',
+'Vỡ ối: nước chảy thành dòng hoặc rỉ liên tục, không tự kiểm soát':'Nước ối có thể trào ra thành dòng hoặc chỉ rỉ ít nhưng liên tục, thường trong và không đau. Nếu không chắc là nước ối hay són tiểu, cứ đến bệnh viện kiểm tra.',
+'Khi nào đi bệnh viện':'Nắm sẵn mốc đi viện giúp cả hai bình tĩnh. Bác sĩ có thể dặn mốc khác tùy tình trạng thai và khoảng cách từ nhà đến bệnh viện, nên hãy hỏi trước.',
+'Quy tắc 5-1-1: cơn co cách nhau 5 phút, dài 1 phút, liên tục 1 giờ':'Bấm giờ từ lúc bắt đầu cơn này đến lúc bắt đầu cơn sau. Khi cơn co đều 5 phút một lần, mỗi cơn khoảng 1 phút và duy trì ít nhất 1 giờ thì nên đến bệnh viện. Một số cơ sở hướng dẫn mốc hơi khác, hãy hỏi bác sĩ của vợ.',
+'Đi ngay nếu vỡ ối hoặc nghi vỡ ối, dù chưa đau bụng':'Sau khi màng ối vỡ, nguy cơ nhiễm trùng cho mẹ và bé tăng lên nên cần đi ngay, kể cả khi chưa có cơn co. Nước ối màu xanh, nâu hoặc có mùi hôi thì càng cần đi gấp.',
+'Đi ngay nếu ra máu đỏ nhiều (hơn vài vệt nhớt hồng)':'Ra máu nhiều hơn vài vệt là dấu hiệu cần được bác sĩ đánh giá ngay.',
+'Đi ngay nếu thai máy giảm rõ rệt hoặc không máy':'Thai máy giảm rõ rệt có thể là dấu hiệu thai suy, không chờ đến lúc đủ cơn co.',
+'Đi ngay nếu có cơn co đều trước tuần 37':'Có thể là dọa sinh non, cần được đánh giá và xử trí sớm.',
+'Đi ngay nếu muốn rặn, hoặc đau dữ dội liên tục':'Cảm giác muốn rặn mạnh cho thấy cuộc sinh đã tiến triển nhiều. Gọi cấp cứu nếu không thể đến bệnh viện kịp.',
+'Không chắc thì gọi bệnh viện hoặc bác sĩ trước':'Đi kiểm tra rồi được cho về vẫn tốt hơn chờ quá lâu. Gọi trước để được hướng dẫn cụ thể.',
+'Khen ngợi, hỏi thăm cảm xúc, chia sẻ nỗi lo hai vợ chồng':'Nhắc vợ rằng cô ấy đang làm rất tốt giúp giảm áp lực. Hỏi thăm cảm xúc mỗi ngày và nói ra nỗi lo của chính bạn, vì làm bố cũng có áp lực; nói ra giúp hai người gần nhau hơn.',
+'Hành động nhỏ: massage, nấu món vợ thích, cùng đi dạo':'Những việc nhỏ nhưng đều đặn thể hiện sự quan tâm rõ hơn lời nói. Dành thời gian bên nhau không áp lực, như đi dạo hay nghe nhạc, giúp cả hai bớt căng thẳng.',
+'Bình tĩnh: ăn nhầm một lần hiếm khi gây bệnh':'Nguy cơ thực tế thấp. Nếu ăn thực phẩm có thể nhiễm Listeria mà không có triệu chứng gì, đa số chuyên gia cho rằng không cần xét nghiệm hay điều trị. Điều quan trọng là theo dõi cơ thể.',
+'Ghi lại món đã ăn, giờ ăn, số lượng, nơi mua':'Thông tin này giúp bác sĩ đánh giá nhanh nếu sau đó vợ bạn có triệu chứng. Giữ lại bao bì hoặc hóa đơn nếu có.',
+'Theo dõi sốt, ớn lạnh, đau cơ, nôn, tiêu chảy trong 2 tháng':'Triệu chứng tiêu hóa (nôn, tiêu chảy) thường xuất hiện trong khoảng 24 giờ và kéo dài 1–3 ngày. Với Listeria xâm lấn, triệu chứng giống cúm (sốt, ớn lạnh, đau cơ, mệt) thường xuất hiện trong 2 tuần đầu nhưng có thể muộn hơn, nên theo dõi đến khoảng 2 tháng. Ở bà bầu triệu chứng thường nhẹ, có người không có triệu chứng.',
+'Có triệu chứng: gọi bác sĩ hoặc đến cơ sở y tế, nói rõ đã ăn gì':'Bác sĩ có thể làm xét nghiệm máu. Nhiễm Listeria ở bà bầu được điều trị bằng kháng sinh nên đi sớm sẽ tốt hơn.',
+'Đi cấp cứu nếu sốt cao, đau đầu dữ dội, cứng cổ, lú lẫn, co giật':'Có thể là dấu hiệu nhiễm trùng nặng lan lên não và màng não. Đi khám ngay cả khi thai máy giảm.',
+'Ăn thực phẩm bị thu hồi: báo bác sĩ dù chưa có triệu chứng':'Khi thực phẩm đã có thông báo thu hồi vì nhiễm khuẩn, hãy cho bác sĩ biết dù chưa có triệu chứng để được theo dõi.',
+'Xử trí theo từng trường hợp':'Cách xử lý thường gặp theo từng tình huống.',
+'Lỡ uống rượu bia: ngừng ngay, báo bác sĩ':'Đặc biệt nếu uống trước khi biết có thai. Ngừng hẳn từ lúc này và nói với bác sĩ ở buổi khám gần nhất để được tư vấn, thay vì chỉ tự lo lắng.',
+'Ăn đồ chưa chín kỹ: uống nhiều nước, theo dõi nôn, tiêu chảy':'Nguy cơ chính là nhiễm Salmonella hoặc ký sinh trùng. Uống đủ nước, ăn nhẹ. Đi khám nếu sốt, tiêu chảy hoặc nôn kéo dài, hoặc có dấu hiệu mất nước (khát nhiều, tiểu ít, chóng mặt). Không tự mua thuốc cầm tiêu chảy hay kháng sinh.',
+'Ăn cá thủy ngân cao một lần: tránh ăn tiếp, không cần quá lo':'Thủy ngân tích lũy khi ăn lặp lại nhiều lần; một bữa đơn lẻ ít khi gây vấn đề. Lần sau chọn cá ít thủy ngân, và hỏi bác sĩ nếu đã ăn thường xuyên.',
+'Uống thuốc hoặc thảo dược không rõ: ngừng và hỏi bác sĩ':'Ngừng dùng, giữ lại bao bì hoặc ghi tên sản phẩm, rồi gọi bác sĩ hoặc dược sĩ ngay để được hướng dẫn.',
+'Nhà cửa':'Sắp xếp không gian an toàn, sạch sẽ cho bé và chỗ nghỉ thoải mái cho mẹ sau sinh.',
+'Vận động':'Vận động đều đặn mức vừa giúp giảm đau lưng, phù chân, ngủ ngon hơn và giảm nguy cơ tiểu đường thai kỳ, tăng huyết áp. Nếu thai kỳ bình thường và bác sĩ không hạn chế thì nên duy trì.',
+'Mục tiêu: 150 phút/tuần mức vừa (30 phút × 5 ngày)':'Mức vừa nghĩa là tim đập nhanh hơn nhưng vẫn nói chuyện được mà chưa hát được. Nếu trước đó ít vận động, bắt đầu từ 10 phút mỗi lần rồi tăng dần. Có thể chia nhỏ trong ngày. Chút vận động vẫn tốt hơn không.',
+'Nên chọn: đi bộ nhanh, bơi, yoga hoặc pilates bầu':'Các môn nhẹ, ít chấn động, ít nguy cơ ngã. Bơi và aerobic dưới nước giúp giảm tải cho khớp và lưng. Nên học yoga hoặc pilates bầu với người hướng dẫn có chuyên môn.',
+'Tập sức mạnh nhẹ 2 ngày/tuần và bài sàn chậu':'Dùng tạ nhẹ hoặc dây kháng lực, mỗi nhóm cơ khoảng 8–12 lần. Không nín thở khi gắng sức. Bài sàn chậu giúp giảm són tiểu và hỗ trợ khi sinh.',
+'Tránh: thể thao va chạm, dễ ngã, hot yoga, nằm ngửa lâu':'Tránh bóng đá, bóng rổ, võ thuật, cưỡi ngựa, trượt tuyết (dễ bị va vào bụng hoặc ngã) và tập nơi quá nóng ẩm như hot yoga. Sau tuần 12–16 tránh các bài phải nằm ngửa lâu vì bụng bầu đè lên mạch máu lớn.',
+'Khởi động 5 phút, uống đủ nước, tránh nắng nóng và giờ ô nhiễm':'Khởi động và giãn cơ khoảng 5 phút trước và sau khi tập. Ăn nhẹ trước khi tập, mang theo nước. Tập sáng sớm hoặc chiều mát, hoặc tập trong nhà khi nắng nóng, ô nhiễm nặng.',
+'Dừng tập và đi khám nếu đau ngực, chóng mặt, ra máu, rỉ ối, đau bụng':'Cũng đi khám nếu khó thở bất thường, đau đầu dữ dội, co thắt tử cung đều đặn, thai máy giảm, hoặc bắp chân sưng đau. Đừng cố tập tiếp.',
+'Hỏi bác sĩ nếu có bệnh tim phổi, đa thai, cao huyết áp':'Một số tình trạng như bệnh tim, phổi, đa thai, tăng huyết áp, thiếu máu nặng, nhau tiền đạo, dọa sinh non cần hạn chế hoặc điều chỉnh vận động theo chỉ định của bác sĩ.',
+'Giấc ngủ':'Giấc ngủ thường bị rối loạn trong thai kỳ do bụng lớn, đau lưng, ợ nóng, đi tiểu đêm và lo lắng. Ngủ kém kéo dài ảnh hưởng tâm trạng của mẹ nên cần chủ động cải thiện.',
+'Thời gian ngủ':'Số giờ, giờ giấc và giấc ngủ trưa.',
+'Ngủ khoảng 7–9 giờ mỗi đêm':'Nhiều nguồn khuyến cáo 7–9 giờ, nhưng không có con số cố định cho mọi người. Chất lượng quan trọng không kém số giờ vì nhiều bà bầu hay thức giấc ban đêm. Thiếu thì bù bằng giấc ngủ ngắn ban ngày.',
+'Giờ giấc cố định: đi ngủ 22h–22h30, dậy 6h–7h':'Đây là gợi ý để giữ nhịp sinh học đều, có thể điều chỉnh theo lịch làm việc của vợ. Quan trọng là đều đặn mỗi ngày, kể cả cuối tuần.',
+'Ngủ trưa 20–30 phút nếu mệt':'Ngủ ngắn giúp bớt mệt, nhất là ba tháng đầu. Không ngủ quá lâu hoặc quá muộn để tránh khó ngủ buổi tối.',
+'Tư thế ngủ':'Tư thế phù hợp theo từng giai đoạn thai kỳ.',
+'Tam cá nguyệt 1: tư thế nào thoải mái cũng được':'Thai còn nhỏ nên được tự do chọn tư thế. Nên tập nằm nghiêng dần để quen.',
+'Từ tam cá nguyệt 2 tập nằm nghiêng; 3 tháng cuối luôn nằm nghiêng':'Nằm nghiêng trái hoặc phải đều được; nằm nghiêng trái thường được khuyên vì máu về tim và tử cung thuận lợi hơn. Ở 3 tháng cuối, nằm ngửa được cho là làm tăng nguy cơ thai lưu nên nên nằm nghiêng.',
+'Không nằm sấp, tránh nằm ngửa':'Nằm sấp khó chịu và đè lên bụng. Nằm ngửa thì bụng bầu đè lên mạch máu lớn, có thể gây chóng mặt, buồn nôn. Nếu giữa đêm tỉnh dậy đang nằm ngửa, không cần lo, chỉ cần lăn nghiêng lại.',
+'Đồ hỗ trợ':'Những món giúp vợ nằm nghiêng thoải mái cả đêm.',
+'Gối bầu chữ U hoặc C, hoặc gối ôm dài':'Giúp giữ tư thế nghiêng, đỡ bụng và lưng cùng lúc. Nên chọn loại vừa khổ giường.',
+'Gối giữa hai chân, dưới bụng và sau lưng':'Gối kẹp giữa hai đầu gối giảm căng vùng hông và lưng; gối nhỏ dưới bụng đỡ sức nặng; gối sau lưng giữ khỏi lăn ngửa.',
+'Kê đầu cao hơn nếu ợ nóng, khó thở':'Dùng thêm gối hoặc gối nêm. Ăn tối sớm, tránh ăn no sát giờ ngủ.',
+'Nệm vừa phải, phòng tối, yên tĩnh, mát':'Nệm không quá mềm (võng lưng) và không quá cứng (đau hông). Dùng rèm tối, nút tai, bịt mắt nếu cần. Giữ phòng mát, thoáng.',
+'Thiết bị & thói quen trước ngủ':'Giảm các thứ làm đầu óc tỉnh táo trước giờ ngủ.',
+'Tắt điện thoại, tivi, laptop 30–60 phút trước khi ngủ':'Ánh sáng xanh và nội dung kích thích làm khó ngủ. Có thể thay bằng sách nhẹ, nhạc êm hoặc trò chuyện với nhau.',
+'Để điện thoại xa giường, bật chế độ không làm phiền':'Tránh bị đánh thức bởi thông báo. Dùng đồng hồ báo thức riêng nếu cần.',
+'Không cà phê, trà, cola sau 14h':'Caffeine có thể còn tác dụng nhiều giờ. Tổng lượng trong ngày vẫn nên dưới 200 mg.',
+'Ăn tối trước ngủ 2–3 giờ, bớt uống nước sát giờ ngủ':'Giảm ợ nóng và đi tiểu đêm. Vẫn uống đủ nước, dồn nhiều hơn vào ban ngày.',
+'Tắm nước ấm (không quá nóng), giãn nhẹ bắp chân':'Nước quá nóng không tốt cho thai. Giãn nhẹ bắp chân trước khi ngủ giúp giảm chuột rút ban đêm.',
+'Stress & thư giãn':'Căng thẳng và lo lắng là nguyên nhân hay gặp gây mất ngủ khi mang thai.',
+'Thở chậm 5–10 phút: hít 4 nhịp, thở ra 6 nhịp':'Thở ra dài hơn hít vào giúp hệ thần kinh dịu lại. Có thể kết hợp thiền hoặc nghe hướng dẫn thư giãn.',
+'Viết ra điều đang lo trước khi ngủ':'Ghi lại những điều lo lắng và việc cần làm ngày mai giúp đầu óc bớt quay cuồng.',
+'Chồng massage nhẹ chân, lưng; nghe nhạc nhẹ':'Cách đơn giản để vợ thư giãn và thấy được quan tâm. Massage nhẹ nhàng và hỏi vợ chỗ nào dễ chịu.',
+'Hạn chế tin tức, mạng xã hội gây lo âu buổi tối':'Thông tin chưa kiểm chứng dễ làm vợ thêm lo. Nếu cần tìm hiểu, hãy hỏi bác sĩ.',
+'Cần hỗ trợ nếu mất ngủ hoặc lo âu kéo dài hơn 2 tuần':'Mất ngủ, lo âu hoặc buồn bã kéo dài có thể là dấu hiệu trầm cảm hoặc rối loạn lo âu, cần gặp bác sĩ hoặc chuyên gia tâm lý.',
+'Hỏi bác sĩ nếu ngáy to, ngưng thở khi ngủ, chân bồn chồn':'Ngáy to kèm ngưng thở hoặc buồn ngủ ban ngày nhiều có thể là ngưng thở khi ngủ. Chân bồn chồn khó chịu về đêm cần kiểm tra thêm, ví dụ có thiếu sắt không.',
+'Không tự dùng thuốc ngủ hoặc thảo dược':'Nhiều loại không an toàn khi mang thai. Hãy hỏi bác sĩ trước.',
+'Nên ăn (gợi ý cụ thể)':'Các nhóm thực phẩm nên có trong thực đơn hằng ngày. Ăn đa dạng, nấu chín kỹ và rửa sạch rau củ trái cây.',
+'Đạm: thịt nạc, trứng chín kỹ, đậu hũ, các loại đậu':'Đạm giúp thai phát triển và mẹ hồi phục. Đậu và thịt nạc cũng cung cấp sắt. Thịt và trứng phải chín hẳn.',
+'Cá nấu chín 2 bữa/tuần: cá hồi, cá mòi, cá cơm':'Cá cung cấp đạm, i-ốt và DHA cho não bé. Chọn loại ít thủy ngân, nấu chín kỹ, và đừng ăn quá nhiều cá béo mỗi tuần.',
+'Rau xanh đậm: rau muống, cải bó xôi, bông cải xanh':'Giàu folate, sắt và chất xơ. Rửa kỹ và nấu chín. Ăn cùng thực phẩm giàu vitamin C giúp hấp thu sắt tốt hơn.',
+'Trái cây tươi: cam, ổi, chuối, bơ':'Vitamin C, kali và chất xơ, giúp chống táo bón. Rửa sạch, gọt vỏ trước khi ăn. Nên ăn trái cây nguyên quả thay vì uống nước ép nhiều đường.',
+'Ngũ cốc nguyên hạt, khoai, yến mạch':'Cung cấp năng lượng, vitamin nhóm B và chất xơ. Chọn gạo lứt, yến mạch, khoai lang thay một phần cơm trắng.',
+'Sữa, sữa chua, phô mai tiệt trùng':'Nguồn canxi và đạm. Chỉ chọn sản phẩm làm từ sữa đã tiệt trùng để tránh vi khuẩn Listeria.',
+'Hạt và dầu tốt: óc chó, hạt chia, mè, dầu ô liu':'Chất béo tốt cho não và tim mạch. Đậu phộng chỉ cần tránh nếu vợ bị dị ứng hoặc bác sĩ dặn.',
+'Hạn chế (không cấm hẳn)':'Có thể dùng một ít, nhưng nên giảm hoặc chọn cách chế biến an toàn.',
+'Caffeine dưới 200 mg/ngày (cà phê, trà, cola)':'Mức cao liên quan đến nguy cơ biến chứng thai kỳ nên cần giảm càng nhiều càng tốt. Cà phê phin ở Việt Nam thường pha từ robusta, có lượng caffeine khoảng gấp đôi arabica, nên một ly phin đậm có thể đã chiếm phần lớn mức 200 mg; cà phê pha loãng hoặc arabica thì khoảng 1–2 tách. Trà, trà sữa, cola, nước tăng lực, sô cô la cũng có caffeine. Nếu từng sảy thai hãy hỏi bác sĩ.',
+'Trà thảo mộc tối đa 4 ly/ngày':'Một số loại thảo mộc không nên dùng khi mang thai. Hãy hỏi bác sĩ trước khi uống thường xuyên hoặc dùng thuốc nam.',
+'Cá ngừ và cá thu: ăn có giới hạn':'Cá ngừ (nhất là cá ngừ đại dương cỡ lớn) và một số loại cá thu có hàm lượng thủy ngân cao hơn các loại cá nhỏ như cá cơm, cá mòi. Không cần cấm hẳn nhưng không ăn thường xuyên; hỏi bác sĩ mức phù hợp.',
+'Đồ ngọt, nước ngọt, đồ chiên, quá mặn':'Dễ tăng cân quá mức và liên quan đến tiểu đường thai kỳ, phù, huyết áp cao.',
+'Thịt nguội, giò chả, xúc xích: chỉ ăn khi đã hâm nóng bốc hơi':'Thực phẩm chế biến sẵn để nguội có thể nhiễm Listeria. Hâm nóng đến khi bốc hơi nghi ngút thì an toàn hơn.',
+'Tránh hoàn toàn':'Những thứ có nguy cơ nhiễm khuẩn, ký sinh trùng, độc chất hoặc gây hại trực tiếp cho thai.',
+'Rượu bia, thuốc lá':'Chưa có mức rượu nào được xem là an toàn khi mang thai. Khói thuốc (kể cả hút thụ động) ảnh hưởng đến thai nhi.',
+'Sống hoặc tái: gỏi cá, sashimi, tiết canh, hàu sống, bò tái':'Thịt, cá, hải sản sống hoặc tái có thể chứa vi khuẩn, ký sinh trùng, virus. Ăn khi đã nấu chín kỹ, ví dụ sushi chỉ nên chọn loại cá đã nấu chín.',
+'Trứng sống hoặc lòng đào':'Nguy cơ nhiễm Salmonella. Nấu chín hẳn cả lòng trắng và lòng đỏ.',
+'Gan động vật, pa-tê, vitamin A liều cao':'Gan và dầu gan cá chứa lượng vitamin A rất cao, có thể gây hại cho thai. Pa-tê (kể cả pa-tê rau hoặc cá) có nguy cơ Listeria. Chỉ dùng vitamin A theo chỉ định của bác sĩ.',
+'Sữa chưa tiệt trùng; phô mai brie, camembert, phô mai xanh':'Có nguy cơ Listeria, bệnh có thể gây sảy thai, thai lưu hoặc nhiễm trùng nặng ở trẻ sơ sinh. Phô mai nấu chín nóng bốc hơi thì an toàn hơn.',
+'Cá thủy ngân cao (cá kiếm, cá mập, cá thu vua) và cá hun khói':'Thủy ngân có thể ảnh hưởng đến hệ thần kinh đang phát triển của thai nhi. Cá hun khói có nguy cơ Listeria.',
+'Lỡ ăn nhầm thì sao?':'Đừng quá lo nếu lỡ ăn một món trong danh sách. Chỉ cần theo dõi cơ thể. Đi khám nếu vợ thấy không khỏe, sốt, ớn lạnh, đau cơ như bị cúm, nôn hoặc tiêu chảy.',
+'Lần khám đầu: tuần 6–8 (sau khi trễ kinh, thử que 2 vạch)':'Thường nên khám lần đầu khi thai khoảng 6–8 tuần, tức khoảng 2–4 tuần sau ngày đáng lẽ có kinh. Lúc này siêu âm thường thấy túi thai trong tử cung và tim thai. Đi quá sớm (trước tuần 5–6) có thể chưa thấy gì dù thai vẫn bình thường.',
+'Đi khám sớm hơn nếu ra máu, đau bụng, từng sảy thai, có bệnh nền':'Cần đi ngay khi có que hai vạch nếu có ra máu, đau bụng dưới (nhất là đau một bên), từng sảy thai hoặc thai ngoài tử cung, có bệnh nền như tiểu đường, cao huyết áp, tuyến giáp, ốm nghén nặng, hoặc mang thai sau điều trị hiếm muộn.',
+'Chuẩn bị: ngày đầu kỳ kinh cuối, bệnh sử, thuốc đang dùng, câu hỏi':'Ghi sẵn để bác sĩ tính tuổi thai và đánh giá nguy cơ. Nên đi cùng vợ buổi này để nghe tư vấn trực tiếp. Trong lúc chờ khám: bổ sung axit folic theo hướng dẫn, tránh rượu bia, thuốc lá và không tự uống thuốc.',
+'Chọn 1 bác sĩ chính và theo lịch bác sĩ hẹn':'Các mốc tuần trong sơ đồ chỉ để tham khảo; bác sĩ sẽ điều chỉnh theo từng người (thai nguy cơ thì khám dày hơn). Nên theo dõi xuyên suốt ở một nơi. Nếu khám thêm nơi khác hoặc đổi bác sĩ, hãy mang sổ khám và kết quả cũ. Gần ngày sinh nên khám ở nơi dự định sinh. Có dấu hiệu bất thường thì đến cơ sở y tế gần nhất, không chờ lịch hẹn.',
+'Đi lại & đi làm':'Ví dụ vợ đi làm cách nhà 9 km bằng xe máy trong 3 tháng đầu. Với thai kỳ bình thường, thường không gây hại trực tiếp cho thai. Rủi ro chính là tai nạn, ngã, mệt hoặc ốm nghén khi lái xe, khói bụi và nắng nóng.',
+'Hỏi bác sĩ trước nếu từng sảy thai, ra máu, đau bụng hoặc được dặn nghỉ':'Với các trường hợp này, nhiều bác sĩ khuyên không nên đi xe máy trong giai đoạn đầu. Cũng nên hỏi nếu thai chưa xác định rõ vị trí hoặc chưa thấy tim thai.',
+'Đội mũ bảo hiểm, đi chậm, tránh giờ cao điểm, mưa, đường xấu':'Giảm nguy cơ va chạm, ngã và rung xóc. Nên đeo khẩu trang tốt và tránh đứng lâu ngoài nắng.',
+'Hôm mệt hoặc ốm nghén nặng: đi taxi, xe công nghệ hoặc để chồng đưa đón':'Ốm nghén, chóng mặt, buồn ngủ làm việc lái xe kém an toàn. Ngồi sau thì không cần tập trung lái nhưng nên ngồi vững, bám chắc.',
+'Dừng xe nghỉ nếu chóng mặt, đau bụng, ra máu; đến cơ sở y tế nếu không đỡ':'Mang theo nước và bánh quy khô để đỡ nghén. Ra máu hoặc đau bụng thì đến cơ sở y tế gần nhất.',
+'Chăm sóc vợ mang thai':'Tổng quan những việc người chồng nên quan tâm trong suốt thai kỳ và sau sinh, chia thành 5 nhóm chính.',
+'Sức khỏe của mẹ':'Theo dõi sức khỏe thể chất của mẹ và thai nhi: khám đúng lịch, ăn uống, vận động, nghỉ ngơi và biết lúc nào cần đi khám gấp.',
+'Khám thai định kỳ':'Các mốc khám và xét nghiệm giúp phát hiện sớm bất thường. Lịch chỉ mang tính tham khảo, bác sĩ sẽ điều chỉnh theo từng người.',
+'Tam cá nguyệt 1: siêu âm tim thai, xét nghiệm':'Xác nhận thai trong tử cung, nghe tim thai, làm xét nghiệm máu, nước tiểu và nhóm máu.',
+'Đo độ mờ da gáy (tuần 11–13)':'Siêu âm đo vùng sau gáy của thai nhi, là một chỉ dấu để sàng lọc nguy cơ bất thường nhiễm sắc thể.',
+'Sàng lọc dị tật: Double/Triple test hoặc NIPT':'Xét nghiệm máu mẹ để ước tính nguy cơ một số dị tật bẩm sinh. Đây là sàng lọc, không phải chẩn đoán; kết quả nguy cơ cao cần bác sĩ tư vấn tiếp.',
+'Siêu âm hình thái (tuần 18–22)':'Siêu âm chi tiết kiểm tra cấu trúc các cơ quan của thai nhi như tim, não, cột sống, tay chân.',
+'Nghiệm pháp dung nạp đường (tuần 24–28)':'Uống dung dịch đường rồi thử máu để phát hiện tiểu đường thai kỳ, tình trạng có thể ảnh hưởng đến mẹ và bé nếu không được kiểm soát.',
+'Từ tuần 28: khám dày hơn, theo dõi ngôi thai':'Giai đoạn cuối thai kỳ, bác sĩ theo dõi huyết áp, cân nặng, nước ối, ngôi thai và tư vấn phương pháp sinh.',
+'Tiêm phòng theo tư vấn bác sĩ':'Một số mũi như uốn ván, ho gà, cúm giúp bảo vệ mẹ và truyền kháng thể cho bé. Chỉ tiêm theo chỉ định.',
+'Dinh dưỡng':'Ăn đủ chất và an toàn thực phẩm quan trọng hơn ăn nhiều. Tăng cân hợp lý tùy thể trạng, hãy hỏi bác sĩ mức phù hợp.',
+'Ăn đa dạng: đạm, rau, trái cây, sữa':'Cung cấp đủ năng lượng và vi chất để mẹ khỏe và thai nhi phát triển.',
+'Bổ sung folic, sắt, canxi, DHA theo chỉ định':'Folic giúp phòng dị tật ống thần kinh, sắt phòng thiếu máu, canxi và DHA hỗ trợ xương và não của bé. Không tự ý tăng liều.',
+'Tránh rượu bia, đồ sống, tái; caffeine dưới 200 mg/ngày':'Rượu bia có thể ảnh hưởng đến thai; đồ sống, tái dễ nhiễm khuẩn và ký sinh trùng. 200 mg caffeine tương đương khoảng 1–2 tách cà phê.',
+'Chia nhỏ bữa nếu ốm nghén, uống đủ nước':'Ăn ít nhưng nhiều bữa giúp giảm buồn nôn và ợ nóng; uống đủ nước giúp hạn chế táo bón.',
+'Vận động & giấc ngủ':'Vận động nhẹ và ngủ đủ giúp giảm đau lưng, phù chân, mệt mỏi và chuẩn bị sức cho ngày sinh.',
+'Đi bộ 20–30 phút, yoga bầu, tập thở':'Các hình thức nhẹ nhàng, nếu bác sĩ không hạn chế. Tập thở và sàn chậu hữu ích khi sinh.',
+'Tránh vận động mạnh, mang vác nặng':'Tránh môn va chạm, dễ ngã, tập quá sức và xách đồ nặng để giảm nguy cơ cho thai.',
+'Ngủ nghiêng, kê gối bầu, nghỉ trưa khi mệt':'Nằm nghiêng và kê gối giúp thoải mái hơn, tránh nằm ngửa lâu ở giai đoạn muộn.',
+'Dấu hiệu cần đi khám ngay (nắm rõ)':'Những dấu hiệu có thể là cảnh báo nguy hiểm. Cả hai vợ chồng nên thuộc để xử trí kịp thời, không chờ đến lịch khám.',
+'Ra máu, đau bụng dữ dội, rỉ hoặc vỡ ối':'Có thể liên quan đến dọa sảy, dọa sinh non hoặc vỡ ối. Cần đến cơ sở y tế ngay.',
+'Thai máy giảm hoặc không máy':'Thai máy giảm rõ rệt có thể là dấu hiệu thai suy. Cần đi khám ngay.',
+'Đau đầu dữ dội, nhìn mờ, phù đột ngột':'Có thể là dấu hiệu tiền sản giật, cần kiểm tra huyết áp và khám gấp.',
+'Sốt cao, nôn nhiều không ăn được':'Có thể do nhiễm trùng hoặc mất nước, cần bác sĩ đánh giá.',
+'Tinh thần & vợ chồng':'Nội tiết thay đổi khiến vợ dễ nhạy cảm và lo lắng. Sự lắng nghe và gần gũi của chồng là chỗ dựa quan trọng.',
+'Lắng nghe, không phán xét, không bình luận cân nặng':'Nghe để hiểu, chưa cần vội đưa giải pháp. Tránh những câu như “có gì đâu mà lo” hay nhận xét về ngoại hình.',
+'Khen ngợi, động viên mỗi ngày':'Nhắc vợ rằng cô ấy đang làm rất tốt giúp giảm áp lực và lo lắng.',
+'Hỏi thăm cảm xúc, chia sẻ nỗi lo của cả hai':'Làm bố cũng có áp lực; nói ra giúp hai người gần nhau hơn và cùng tìm cách giải quyết.',
+'Hành động nhỏ: massage, nấu món vợ thích':'Những việc nhỏ nhưng đều đặn thể hiện sự quan tâm rõ hơn lời nói.',
+'Trao đổi cởi mở về sự gần gũi':'Ham muốn có thể thay đổi. Thai kỳ bình thường thường vẫn an toàn, nhưng cần hỏi bác sĩ nếu có ra máu, nhau tiền đạo, dọa sinh non hoặc rỉ ối.',
+'Theo dõi buồn bã, lo âu kéo dài hơn 2 tuần':'Trầm cảm và lo âu khi mang thai khá phổ biến và điều trị được. Nếu kéo dài, nên cùng vợ gặp bác sĩ hoặc chuyên gia tâm lý.',
+'Cùng thư giãn: đi dạo, nghe nhạc':'Dành thời gian bên nhau không áp lực giúp cả hai bớt căng thẳng.',
+'Nhà cửa & gia đình':'Tạo môi trường sống an toàn, thoải mái cho vợ và giữ sự thống nhất với hai bên gia đình.',
+'Việc nhà & an toàn':'Chia việc nhà và loại bỏ các nguy cơ trong sinh hoạt hằng ngày.',
+'Đảm nhận việc nặng, việc phải cúi':'Xách đồ, lau dọn, khuân vác để vợ không phải gắng sức.',
+'Tránh hóa chất, thuốc diệt côn trùng, phân mèo':'Hóa chất mạnh có thể hại thai; phân mèo và đất vườn có nguy cơ nhiễm toxoplasma. Nếu buộc phải tiếp xúc thì đeo găng.',
+'Rửa sạch rau củ, nấu chín kỹ':'Giảm nguy cơ nhiễm khuẩn và ký sinh trùng từ thực phẩm.',
+'Bỏ thuốc hoặc không hút gần vợ':'Khói thuốc thụ động ảnh hưởng đến thai nhi.',
+'Không tự mua thuốc, thực phẩm chức năng':'Một số thuốc và thảo dược không an toàn khi mang thai. Luôn hỏi bác sĩ trước.',
+'Lái xe êm, thắt dây an toàn; hỏi bác sĩ trước khi đi xa':'Đai dưới của dây an toàn nằm dưới bụng. Du lịch thường an toàn nhất ở tam cá nguyệt 2, gần ngày sinh nên hạn chế đi xa.',
+'Gia đình & xã hội':'Hai bên gia đình thường có nhiều quan niệm khác nhau. Cần thống nhất để vợ không bị áp lực.',
+'Thống nhất lấy bác sĩ làm chuẩn':'Lắng nghe lịch sự lời khuyên của người lớn nhưng làm theo hướng dẫn y khoa.',
+'Đứng về phía vợ khi bị áp lực':'Chủ động đứng ra trao đổi khi vợ bị chỉ trích hoặc bị ép kiêng cữ.',
+'Phân công ai giúp sau sinh, sắp xếp lịch khách thăm':'Thống nhất sớm ai hỗ trợ và giới hạn khách để mẹ và bé được nghỉ ngơi.',
+'Tham gia nhóm bố mẹ trẻ':'Trao đổi kinh nghiệm với người cùng hoàn cảnh, nhưng thông tin chưa kiểm chứng thì đừng để gây lo lắng.',
+'Chuẩn bị đón con':'Chuẩn bị kiến thức, đồ đạc và tài chính để không bị động khi đến ngày sinh.',
+'Học & lên kế hoạch':'Hiểu quá trình sinh và quyết định sớm nơi sinh, cách sinh.',
+'Tham gia lớp tiền sản, dùng nguồn y khoa đáng tin':'Lớp tiền sản dạy về chuyển dạ, hơi thở, cho bú và chăm sóc sơ sinh. Hạn chế mẹo truyền miệng chưa kiểm chứng.',
+'Chọn bệnh viện, tìm hiểu sinh thường và sinh mổ':'Cân nhắc khoảng cách, chi phí, chất lượng, chính sách cho người nhà. Cách sinh do bác sĩ tư vấn dựa trên tình trạng thực tế.',
+'Biết dấu hiệu chuyển dạ thật':'Cơn co đều và dày dần, ra nhớt hồng hoặc máu, vỡ ối. Khi có dấu hiệu nên liên hệ bệnh viện.',
+'Có sẵn số điện thoại và phương tiện đi lúc nửa đêm':'Số bệnh viện, bác sĩ và người đưa đón để không cuống khi chuyển dạ ban đêm.',
+'Túi đồ đi sinh (tuần 34–36)':'Nên chuẩn bị xong trước tuần 36 và để ở chỗ dễ lấy.',
+'Giấy tờ: CCCD, sổ khám thai, thẻ BHYT':'Giấy tờ tùy thân, sổ khám thai, thẻ BHYT và hồ sơ cần thiết khác.',
+'Đồ của mẹ: quần áo, đồ vệ sinh, băng vệ sinh':'Quần áo, đồ vệ sinh, băng vệ sinh sau sinh, áo ngực cho bú, dép.',
+'Đồ của bé: quần áo, tã, khăn, mũ':'Quần áo sơ sinh, tã, khăn, mũ, bao tay, bao chân, chăn.',
+'Sạc điện thoại':'Dễ quên nhưng cần để liên lạc và chụp ảnh ngày bé chào đời.',
+'Nôi hoặc giường, chỗ thay tã, đồ tắm':'Sắp xếp không gian an toàn, sạch sẽ cho bé và chỗ nghỉ thoải mái cho mẹ.',
+'Ghế ô tô an toàn cho trẻ sơ sinh':'Cần thiết nếu đi ô tô, kể cả chuyến đầu tiên đưa bé từ bệnh viện về nhà.',
+'Tài chính & công việc':'Dự trù chi phí và nắm rõ quyền lợi để không bị áp lực tiền bạc.',
+'Lập ngân sách và quỹ dự phòng (sinh mổ, bé cần chăm sóc)':'Gồm chi phí khám thai, sinh, nằm viện, đồ sơ sinh và một khoản dự phòng cho tình huống phát sinh.',
+'Tìm hiểu chế độ thai sản, chuẩn bị hồ sơ và hạn nộp':'Thời gian nghỉ, mức hưởng, điều kiện đóng BHXH. Quy định có thể thay đổi nên hãy kiểm tra với cơ quan BHXH hoặc phòng nhân sự.',
+'Sắp xếp lịch đi khám cùng vợ, xin nghỉ khi vợ sinh':'Có mặt ở các buổi khám quan trọng và ngày sinh; hỏi về chế độ nghỉ dành cho chồng.',
+'Sau sinh':'Giai đoạn dễ bị bỏ quên nhưng mẹ cần được hỗ trợ nhiều nhất, cả về thể chất lẫn tinh thần.',
+'Hồi phục của mẹ':'Cơ thể mẹ cần thời gian để hồi phục sau sinh.',
+'Theo dõi sốt, ra máu nhiều, vết mổ/khâu':'Sốt, ra máu nhiều, vết thương sưng đỏ chảy dịch, đau đầu dữ dội hoặc khó thở cần đi khám ngay.',
+'Khám sau sinh (4–6 tuần)':'Bác sĩ kiểm tra sự hồi phục của mẹ sau sinh.',
+'Chăm con':'Chia sẻ việc chăm bé để mẹ không bị kiệt sức.',
+'Hỗ trợ cho con bú, thay tã, bế bé ợ hơi':'Chồng làm được nhiều việc quanh chuyện cho bú. Nếu tắc sữa, đau hoặc ít sữa, nên gặp chuyên gia tư vấn cho con bú.',
+'Chia ca đêm để vợ ngủ liền':'Ngủ liền một giấc dài giúp mẹ hồi phục và ổn định tâm trạng.',
+'Theo dõi lịch tiêm chủng, khám cho bé':'Ghi lại lịch tiêm và khám định kỳ cho bé để không bỏ sót.',
+'Tinh thần sau sinh':'Thay đổi cảm xúc sau sinh rất thường gặp, cần phân biệt buồn thoáng qua và trầm cảm.',
+'Theo dõi baby blues trong 1–2 tuần đầu':'Buồn thoáng qua, dễ khóc trong 1–2 tuần đầu là thường gặp và thường tự giảm dần.',
+'Đi khám sớm nếu buồn, lo âu kéo dài':'Nếu kéo dài hơn 2 tuần hoặc nặng dần, đó có thể là trầm cảm sau sinh và cần hỗ trợ chuyên môn. Đừng chờ tự hết.'
+};
+
+var FAQ_SEED=[{"q": "Khi nào nên đi khám thai lần đầu?", "a": "Thường nên đi khi thai khoảng 6–8 tuần, tức khoảng 2–4 tuần sau ngày đáng lẽ có kinh và thử que hai vạch. Lúc này siêu âm thường thấy túi thai trong tử cung và tim thai.\nĐi sớm hơn ngay khi có que hai vạch nếu có ra máu, đau bụng dưới (nhất là đau một bên), từng sảy thai hoặc thai ngoài tử cung, hoặc có bệnh nền như tiểu đường, cao huyết áp, tuyến giáp."}, {"q": "Cần khám thai bao nhiêu lần? Có phải khám cố định một nơi không?", "a": "Số lần khám do bác sĩ quyết định; thai kỳ bình thường thường khoảng 10–12 lần, thai nguy cơ cao sẽ dày hơn. Các mốc quan trọng: 11–13 tuần (độ mờ da gáy), 18–22 tuần (hình thái), 24–28 tuần (đường huyết), từ tuần 28 khám dày hơn.\nNên chọn một bác sĩ chính để theo dõi xuyên suốt. Nếu khám thêm nơi khác, mang theo sổ khám và kết quả cũ."}, {"q": "Ra một ít máu trong 3 tháng đầu có nguy hiểm không?", "a": "Ra ít máu hồng hoặc nâu có thể gặp ở 3 tháng đầu và không phải lúc nào cũng nguy hiểm, nhưng không nên tự kết luận. Hãy báo bác sĩ hoặc đi khám.\nĐi ngay nếu ra máu đỏ nhiều, kèm đau bụng, đau lệch một bên, chóng mặt hoặc ngất, vì cần loại trừ dọa sảy và thai ngoài tử cung."}, {"q": "Ốm nghén bao giờ hết? Khi nào cần đi khám?", "a": "Ốm nghén thường bắt đầu khoảng tuần 6 và giảm dần sau tuần 12–16, một số người kéo dài hơn. Chia nhỏ bữa, ăn bánh quy khô trước khi dậy, tránh mùi gây buồn nôn.\nĐi khám nếu nôn không giữ được thức ăn và nước cả ngày, tiểu ít và sẫm màu, sụt cân, chóng mặt, vì có thể là nôn nghén nặng cần điều trị."}, {"q": "Mang thai tăng bao nhiêu cân là hợp lý?", "a": "Tùy chỉ số BMI trước khi mang thai. Mức tham khảo theo khuyến cáo quốc tế (thai đơn): thiếu cân 12,5–18 kg, bình thường 11,5–16 kg, thừa cân 7–11,5 kg, béo phì 5–9 kg.\nNgười châu Á có thể dùng ngưỡng BMI khác, nên hãy hỏi bác sĩ mức phù hợp cho vợ. Tăng quá nhanh hoặc quá ít đều cần được theo dõi."}, {"q": "Có cần ăn cho hai người không?", "a": "Không. Ba tháng đầu hầu như không cần ăn thêm. Ba tháng giữa chỉ cần thêm khoảng 340 kcal/ngày, ba tháng cuối khoảng 450 kcal/ngày, tương đương một bữa phụ.\nĐiều quan trọng là ăn đủ chất (đạm, rau, trái cây, sữa, ngũ cốc nguyên hạt) và an toàn thực phẩm, không phải ăn thật nhiều."}, {"q": "Bà bầu có được uống cà phê, trà sữa không?", "a": "Có thể dùng ít. Khuyến cáo giữ caffeine dưới 200 mg/ngày. Cà phê phin ở Việt Nam thường pha từ robusta, có lượng caffeine khoảng gấp đôi arabica, nên một ly phin đậm có thể đã chiếm phần lớn mức này; cà phê pha loãng thì khoảng 1–2 tách. Trà, trà sữa, cola, nước tăng lực, sô cô la cũng có caffeine nên cần cộng dồn.\nTrà sữa thường nhiều đường, dễ tăng cân và tăng nguy cơ tiểu đường thai kỳ, nên hạn chế."}, {"q": "Những món nào cần tránh khi mang thai?", "a": "Tránh hoàn toàn: rượu bia; thịt, cá, hải sản sống hoặc tái (gỏi, sashimi, tiết canh, hàu sống, bò tái); trứng sống hoặc lòng đào; gan và pa-tê; sữa chưa tiệt trùng và phô mai mềm mốc; cá thủy ngân cao (cá kiếm, cá mập, cá thu vua) và cá hun khói.\nHạn chế: caffeine, đồ ngọt, đồ chiên, cá ngừ. Thịt nguội, giò chả, xúc xích chỉ ăn khi đã hâm nóng bốc hơi. Xem chi tiết ở nhánh Dinh dưỡng."}, {"q": "Có được quan hệ vợ chồng khi mang thai không?", "a": "Với thai kỳ bình thường, quan hệ thường vẫn an toàn và không làm hại thai. Ham muốn có thể thay đổi theo từng giai đoạn, hãy trao đổi cởi mở và tôn trọng cảm giác của vợ.\nCần hỏi bác sĩ và tạm ngừng nếu có ra máu, nhau tiền đạo, dọa sinh non, rỉ hoặc vỡ ối, hoặc bác sĩ đã dặn kiêng."}, {"q": "Mẹ bầu có được đi làm, tập thể dục, đi xe máy không?", "a": "Đa số có thể đi làm bình thường; tránh công việc tiếp xúc hóa chất, phóng xạ, mang vác nặng hoặc đứng lâu.\nNên vận động khoảng 150 phút/tuần ở mức vừa (đi bộ nhanh, bơi, yoga bầu) nếu bác sĩ không hạn chế.\nĐi xe máy quãng ngắn thường được nếu thai kỳ bình thường, nhưng nên đi chậm, đội mũ bảo hiểm, tránh đường xấu, và đổi phương tiện những hôm mệt hoặc ốm nghén nặng."}, {"q": "Bị cảm, đau đầu có được tự uống thuốc không?", "a": "Không nên tự mua thuốc. Paracetamol vẫn là lựa chọn giảm đau, hạ sốt được các hội sản khoa khuyến cáo đầu tiên khi mang thai, nhưng nên dùng liều thấp nhất có hiệu quả, trong thời gian ngắn nhất cần thiết, và hỏi bác sĩ hoặc dược sĩ. Năm 2025, cơ quan dược phẩm Mỹ (FDA) bắt đầu bổ sung cảnh báo về mối liên quan có thể có khi dùng kéo dài trong thai kỳ, dù chưa chứng minh được quan hệ nhân quả; sốt cao không được điều trị cũng có hại cho thai.\nTránh ibuprofen, aspirin và các thuốc giảm đau chống viêm khác nếu không có chỉ định, nhất là từ nửa sau thai kỳ. Nhiều thuốc cảm phối hợp và thảo dược không phù hợp với bà bầu."}, {"q": "Mang thai cần tiêm phòng những gì?", "a": "Thường được khuyên: vắc xin cúm (trong mùa cúm, ở bất kỳ giai đoạn nào), uốn ván, và ho gà (thường tiêm ở 3 tháng cuối, khoảng tuần 27–36) để truyền kháng thể cho bé.\nKhông tiêm vắc xin sống như sởi–quai bị–rubella, thủy đậu khi đang mang thai. Lịch tiêm cụ thể do bác sĩ chỉ định."}, {"q": "Khi nào cảm nhận được thai máy? Theo dõi thế nào?", "a": "Lần đầu thường cảm nhận khoảng tuần 16–24, con rạ có thể sớm hơn. Từ khoảng tuần 28, hãy làm quen kiểu cử động quen thuộc của bé.\nNếu thấy thai máy giảm rõ, yếu đi hoặc khác thường, đi khám ngay trong ngày, không chờ đến hôm sau. Một số nơi hướng dẫn đếm cử động (ví dụ 10 lần trong 2 giờ), hãy hỏi bác sĩ cách theo dõi."}, {"q": "Bà bầu nên nằm ngủ tư thế nào?", "a": "Ba tháng đầu tư thế nào thoải mái cũng được. Từ ba tháng giữa nên tập nằm nghiêng, và ba tháng cuối nên luôn nằm nghiêng (trái hoặc phải đều được) vì nằm ngửa ở giai đoạn này được cho là làm tăng nguy cơ thai lưu.\nNếu giữa đêm tỉnh dậy đang nằm ngửa thì chỉ cần lăn nghiêng lại. Gối bầu, gối kẹp giữa hai chân giúp giữ tư thế dễ hơn."}, {"q": "Có được nhuộm tóc, dùng mỹ phẩm khi mang thai không?", "a": "Nhuộm tóc: phần lớn nghiên cứu cho thấy nguy cơ thấp vì lượng hóa chất ngấm qua da rất ít; nhiều bác sĩ khuyên đợi qua 3 tháng đầu và làm ở nơi thoáng khí.\nMỹ phẩm: tránh sản phẩm chứa retinoid (retinol, tretinoin, isotretinoin). Với thuốc trị mụn, trị nám, hãy hỏi bác sĩ trước."}, {"q": "Có được đi máy bay, đi du lịch không?", "a": "Với thai kỳ bình thường, đi máy bay thường an toàn; thời điểm dễ chịu nhất là ba tháng giữa. Nhiều hãng yêu cầu giấy xác nhận của bác sĩ từ khoảng tuần 28 và hạn chế bay gần ngày dự sinh (thường sau tuần 36, sớm hơn với song thai).\nTrên chuyến bay dài nên đi lại, uống đủ nước để giảm nguy cơ huyết khối. Hỏi bác sĩ và hãng bay trước khi đặt vé."}, {"q": "Đau bụng, đau lưng, chuột rút có bình thường không?", "a": "Đau nhói nhẹ hai bên bụng dưới khi đổi tư thế (do dây chằng giãn), đau lưng, chuột rút bắp chân về đêm khá thường gặp. Nghỉ ngơi, giãn cơ nhẹ, kê gối và vận động đều giúp giảm.\nĐi khám nếu đau dữ dội hoặc liên tục, đau kèm ra máu, sốt, tiểu buốt, hoặc có cơn co đều trước tuần 37."}, {"q": "Phù chân khi mang thai có sao không?", "a": "Phù nhẹ ở bàn chân, mắt cá vào cuối ngày, nhất là ba tháng cuối, là thường gặp. Kê cao chân khi nghỉ, tránh đứng hoặc ngồi lâu, đi bộ nhẹ.\nĐi khám ngay nếu phù đột ngột ở mặt, tay kèm đau đầu, nhìn mờ, đau vùng thượng vị (nghi tiền sản giật), hoặc một bên bắp chân sưng, đau, nóng đỏ (nghi huyết khối)."}, {"q": "Tiểu đường thai kỳ là gì? Có đáng lo không?", "a": "Là tình trạng đường huyết tăng xuất hiện khi mang thai, thường được sàng lọc bằng nghiệm pháp dung nạp đường ở tuần 24–28, sớm hơn nếu có nguy cơ (thừa cân, gia đình có người tiểu đường, từng bị ở lần mang thai trước).\nPhần lớn kiểm soát được bằng chế độ ăn và vận động, một số cần thuốc. Thường hết sau sinh, nhưng nguy cơ tiểu đường type 2 về sau tăng nên cần kiểm tra lại."}, {"q": "Làm sao biết sắp sinh và khi nào đi bệnh viện?", "a": "Dấu hiệu chuyển dạ thật: cơn co đều, mạnh dần, dày dần, không hết khi nghỉ; ra nhớt hồng; vỡ ối. Cơn gò giả thường không đau, không đều và không tăng dần.\nĐi bệnh viện theo quy tắc 5-1-1 (cơn co 5 phút một lần, mỗi cơn khoảng 1 phút, kéo dài 1 giờ), hoặc đi ngay nếu vỡ ối, ra máu đỏ nhiều, thai máy giảm, có cơn co đều trước tuần 37. Bác sĩ có thể dặn mốc khác tùy trường hợp."}, {"q": "Nhà có nuôi chó, mèo thì có sao không?", "a": "Vẫn nuôi được. Điều cần lưu ý chủ yếu với mèo là ký sinh trùng toxoplasma có thể có trong phân mèo và đất vườn, có thể gây hại cho thai nếu mẹ nhiễm lần đầu khi mang thai.\nTốt nhất để người khác dọn khay cát cho mèo hằng ngày; nếu vợ phải làm thì đeo găng và rửa tay kỹ. Đeo găng khi làm vườn, không cho mèo ăn thịt sống, tránh tiếp xúc mèo hoang. Với chó, chủ yếu là rửa tay sau khi chơi và tránh bị cào, ngã khi chó nhảy chồm lên bụng."}, {"q": "Có được tắm nước nóng, xông hơi, dùng quạt, điều hòa không?", "a": "Tắm nước ấm thì được. Nên tránh ngâm bồn nước nóng, xông hơi, phòng sauna, nhất là 3 tháng đầu, vì thân nhiệt tăng cao có thể ảnh hưởng đến thai.\nDùng quạt và điều hòa hoàn toàn bình thường, không cần kiêng gió. Chỉ cần để nhiệt độ dễ chịu, tránh luồng gió lạnh thổi thẳng vào người trong thời gian dài."}, {"q": "Dùng điện thoại, máy tính, lò vi sóng, đi qua máy soi ở sân bay có hại cho thai không?", "a": "Hiện chưa có bằng chứng cho thấy điện thoại, máy tính, wifi hay lò vi sóng dùng bình thường gây hại cho thai, nên không cần áo chống bức xạ hay kiêng các thiết bị này. Máy soi an ninh ở sân bay cũng được xem là an toàn; nếu lo lắng có thể đề nghị kiểm tra bằng tay.\nĐiều đáng lưu ý hơn là ngồi lâu một chỗ và dùng màn hình khuya làm mất ngủ: nên đứng dậy đi lại mỗi giờ."}, {"q": "Có được đi khám răng, chụp X-quang khi mang thai không?", "a": "Có, và nên chăm sóc răng miệng vì nội tiết thai kỳ làm nướu dễ sưng, chảy máu. Hãy báo nha sĩ là đang mang thai. Ba tháng giữa là thời điểm thuận lợi nhất cho các điều trị không gấp; trường hợp đau hoặc nhiễm trùng thì nên chữa ngay, không cần chờ.\nChụp X-quang răng có liều rất thấp và thường được che chắn, được xem là an toàn khi cần thiết. Với các loại chụp chiếu khác, luôn báo bác sĩ là đang mang thai để được cân nhắc."}, {"q": "Bị táo bón, trĩ khi mang thai phải làm sao?", "a": "Rất thường gặp do nội tiết làm ruột co bóp chậm và viên sắt bổ sung. Nên uống đủ nước, ăn nhiều rau, trái cây, ngũ cốc nguyên hạt, vận động nhẹ hằng ngày và đi vệ sinh khi có nhu cầu, không rặn mạnh.\nNếu vẫn táo bón hoặc bị trĩ đau, chảy máu, hãy hỏi bác sĩ về thuốc nhuận tràng hoặc thuốc bôi phù hợp, không tự mua. Nếu nghi viên sắt gây táo bón, đừng tự ngừng mà hỏi bác sĩ để đổi loại."}, {"q": "Ợ nóng, trào ngược khi mang thai giảm bằng cách nào?", "a": "Hay gặp hơn ở nửa sau thai kỳ khi tử cung lớn đẩy dạ dày lên. Ăn nhiều bữa nhỏ, ăn chậm, hạn chế đồ chiên, cay, chua, cà phê, nước ngọt có ga. Không nằm ngay sau ăn, ăn tối trước khi ngủ 2–3 giờ, kê đầu cao khi ngủ.\nNếu vẫn khó chịu, hỏi bác sĩ về thuốc kháng axit dùng được khi mang thai. Đau dữ dội vùng thượng vị, nhất là kèm đau đầu, nhìn mờ, cần đi khám ngay vì có thể là dấu hiệu tiền sản giật chứ không phải ợ nóng."}, {"q": "Ra khí hư nhiều, đi tiểu nhiều có bình thường không?", "a": "Khí hư tăng lên, màu trắng trong hoặc trắng đục, không mùi là bình thường khi mang thai. Đi tiểu nhiều cũng thường gặp ở 3 tháng đầu và 3 tháng cuối do tử cung đè lên bàng quang.\nCần đi khám nếu khí hư có mùi hôi, màu vàng xanh hoặc như bã đậu, gây ngứa rát; nếu tiểu buốt, tiểu ra máu, sốt hoặc đau lưng một bên (nghi nhiễm trùng tiểu); hoặc nếu có dịch trong chảy ra liên tục như nước, vì có thể là rỉ ối."}, {"q": "Bị sốt, cúm hoặc COVID khi mang thai phải làm sao?", "a": "Bà bầu dễ bị cúm và COVID nặng hơn người thường, nên đừng chủ quan. Nghỉ ngơi, uống đủ nước, hạ sốt bằng paracetamol theo hướng dẫn của bác sĩ hoặc dược sĩ, vì sốt cao kéo dài không tốt cho thai.\nGọi bác sĩ sớm khi sốt từ 38°C trở lên hoặc nghi cúm, COVID: một số thuốc kháng virus có hiệu quả nhất nếu dùng sớm. Đi cấp cứu nếu khó thở, đau ngực, lú lẫn, sốt cao không hạ, hoặc thai máy giảm. Tiêm phòng cúm và COVID theo tư vấn là cách phòng tốt nhất."}, {"q": "Có cần uống sữa bầu không?", "a": "Không bắt buộc. Sữa bầu chỉ là một nguồn bổ sung năng lượng, đạm, canxi và vi chất. Nếu vợ ăn uống đủ chất và đang dùng vi chất theo chỉ định, có thể thay bằng sữa tươi tiệt trùng, sữa chua.\nNhiều loại sữa bầu khá nhiều đường và năng lượng, dễ tăng cân quá mức. Nếu dùng sữa bầu kèm viên vi chất, hãy đưa nhãn cho bác sĩ xem để tránh trùng lặp, nhất là vitamin A và sắt."}, {"q": "Có cách nào phòng rạn da khi mang thai không?", "a": "Rạn da phụ thuộc nhiều vào cơ địa, di truyền và tốc độ tăng cân, nên không có kem nào được chứng minh chắc chắn ngăn được rạn. Tăng cân từ từ trong mức khuyến cáo và dưỡng ẩm da để đỡ ngứa, khô là những việc nên làm.\nTránh sản phẩm trị rạn có chứa retinoid (retinol, tretinoin) khi mang thai. Vết rạn thường mờ dần và nhạt màu sau sinh."}, {"q": "Chỗ làm của vợ cách nhà 9 km, đi xe máy trong 1 tháng ở 3 tháng đầu có ảnh hưởng đến thai không?", "a": "Với thai kỳ bình thường, đi xe máy khoảng 9 km (20–30 phút) thường không được xem là gây hại trực tiếp cho thai ở những tuần đầu, vì thai còn nhỏ và nằm sâu trong khung chậu. Rủi ro chính nằm ở xung quanh việc đi xe: tai nạn, té ngã; mệt, chóng mặt hoặc buồn nôn do ốm nghén khi đang lái; khói bụi, nắng nóng; đường xóc phải phanh gấp liên tục.\nNên hỏi bác sĩ trước nếu vợ từng sảy thai, đang ra máu hoặc đau bụng dưới, được dặn nghỉ ngơi (dọa sảy), thai chưa xác định rõ vị trí hoặc chưa thấy tim thai, hoặc ốm nghén nặng; nhiều bác sĩ sẽ khuyên không đi xe máy trong những trường hợp này.\nNếu bác sĩ đồng ý: đội mũ bảo hiểm đạt chuẩn, đi chậm, tránh giờ cao điểm, trời mưa và đường xấu; đeo khẩu trang tốt; mang theo nước và bánh quy khô. Hôm nào mệt hoặc nghén nặng thì đi taxi, xe công nghệ hoặc để chồng đưa đón (ngồi sau thì ngồi vững, bám chắc). Dừng xe nghỉ nếu chóng mặt, đau bụng hoặc ra máu, và đến cơ sở y tế gần nhất nếu không đỡ.\nVì chỉ kéo dài 1 tháng, nếu sắp xếp được thì đưa đón hoặc đi xe công cộng trong thời gian này sẽ an toàn hơn mà không tốn kém nhiều."}];
+var uidc=0;
+function nid(){uidc++;return 'n'+uidc+Math.random().toString(36).slice(2,6);}
+function N(t,c){return {id:nid(),t:t,d:DESC[t]||'',done:false,open:true,c:c||[]};}
+function G(t){
+  var k=[];
+  [].slice.call(arguments,1).forEach(function(x){
+    (Array.isArray(x)?x:[x]).forEach(function(y){k.push(typeof y==='string'?N(y):y);});
+  });
+  return N(t,k);
+}
+var VISIT_FIRST='Lần khám đầu: tuần 6–8 (sau khi trễ kinh, thử que 2 vạch)';
+function financeGroups(){
+  return [
+    G('Dự trù chi phí mức trung bình: khoảng 45–80 triệu',
+      'Khám thai định kỳ 10–12 lần: 3–7 triệu',
+      'Siêu âm hình thái, 4D (khoảng 3 lần): 1–2 triệu',
+      'Sàng lọc dị tật (Double/Triple hoặc NIPT): 1–5 triệu',
+      'Xét nghiệm máu, nước tiểu, đường huyết, tiêm phòng: 2–4 triệu',
+      'Vitamin, vi chất cả thai kỳ: 2,5–5 triệu',
+      'Sinh thường khu dịch vụ bệnh viện công: 15–20 triệu',
+      'Dự phòng sinh mổ: cộng thêm 10–15 triệu',
+      'Đồ sơ sinh, túi đồ đi sinh: 5–10 triệu',
+      '3 tháng đầu (tã, đồ dùng, khám bé, vắc xin dịch vụ): 5–15 triệu',
+      'Quỹ phát sinh: khoảng 10 triệu'),
+    G('Khoản được nhận (nếu đóng BHXH bắt buộc)',
+      'Trợ cấp một lần: 5,06 triệu/con (sinh từ 1/7/2026)',
+      'Mẹ nghỉ 6 tháng, hưởng 100% lương bình quân đóng BHXH',
+      'Chồng nghỉ 5 ngày (sinh thường), 7 ngày (sinh mổ)',
+      'BHYT chi trả một phần chi phí khám và sinh')
+  ];
+}
+function laborGroups(){
+  return [
+    G('Mốc thời gian chuẩn bị',
+      'Tuần 12–20: chọn bệnh viện, hỏi chi phí và chính sách cho người nhà',
+      'Tuần 20–28: tìm hiểu sinh thường, sinh mổ; đặt chỗ lớp tiền sản',
+      'Tuần 28–34: học lớp tiền sản, lập kế hoạch sinh với bác sĩ',
+      'Tuần 34–36: xong túi đồ đi sinh, đi thử đường đến bệnh viện',
+      'Từ tuần 37: sẵn sàng bất cứ lúc nào, hạn chế đi xa'),
+    G('Dấu hiệu chuyển dạ thật',
+      'Cơn co thật: đều, mạnh dần, dày dần, không hết khi nghỉ',
+      'Cơn gò giả (Braxton Hicks): thường không đau, không đều',
+      'Ra nhớt hồng hoặc lẫn ít máu (show)',
+      'Đau lưng âm ỉ, buồn đi vệ sinh nhiều',
+      'Vỡ ối: nước chảy thành dòng hoặc rỉ liên tục, không tự kiểm soát'),
+    G('Khi nào đi bệnh viện',
+      'Quy tắc 5-1-1: cơn co cách nhau 5 phút, dài 1 phút, liên tục 1 giờ',
+      'Đi ngay nếu vỡ ối hoặc nghi vỡ ối, dù chưa đau bụng',
+      'Đi ngay nếu ra máu đỏ nhiều (hơn vài vệt nhớt hồng)',
+      'Đi ngay nếu thai máy giảm rõ rệt hoặc không máy',
+      'Đi ngay nếu có cơn co đều trước tuần 37',
+      'Đi ngay nếu muốn rặn, hoặc đau dữ dội liên tục',
+      'Không chắc thì gọi bệnh viện hoặc bác sĩ trước')
+  ];
+}
+function exerciseGroup(){
+  return G('Vận động',
+    'Mục tiêu: 150 phút/tuần mức vừa (30 phút × 5 ngày)',
+    'Nên chọn: đi bộ nhanh, bơi, yoga hoặc pilates bầu',
+    'Tập sức mạnh nhẹ 2 ngày/tuần và bài sàn chậu',
+    'Tránh: thể thao va chạm, dễ ngã, hot yoga, nằm ngửa lâu',
+    'Khởi động 5 phút, uống đủ nước, tránh nắng nóng và giờ ô nhiễm',
+    'Dừng tập và đi khám nếu đau ngực, chóng mặt, ra máu, rỉ ối, đau bụng',
+    'Hỏi bác sĩ nếu có bệnh tim phổi, đa thai, cao huyết áp');
+}
+function sleepGroup(){
+  return G('Giấc ngủ',
+    G('Thời gian ngủ',
+      'Ngủ khoảng 7–9 giờ mỗi đêm',
+      'Giờ giấc cố định: đi ngủ 22h–22h30, dậy 6h–7h',
+      'Ngủ trưa 20–30 phút nếu mệt'),
+    G('Tư thế ngủ',
+      'Tam cá nguyệt 1: tư thế nào thoải mái cũng được',
+      'Từ tam cá nguyệt 2 tập nằm nghiêng; 3 tháng cuối luôn nằm nghiêng',
+      'Không nằm sấp, tránh nằm ngửa'),
+    G('Đồ hỗ trợ',
+      'Gối bầu chữ U hoặc C, hoặc gối ôm dài',
+      'Gối giữa hai chân, dưới bụng và sau lưng',
+      'Kê đầu cao hơn nếu ợ nóng, khó thở',
+      'Nệm vừa phải, phòng tối, yên tĩnh, mát'),
+    G('Thiết bị & thói quen trước ngủ',
+      'Tắt điện thoại, tivi, laptop 30–60 phút trước khi ngủ',
+      'Để điện thoại xa giường, bật chế độ không làm phiền',
+      'Không cà phê, trà, cola sau 14h',
+      'Ăn tối trước ngủ 2–3 giờ, bớt uống nước sát giờ ngủ',
+      'Tắm nước ấm (không quá nóng), giãn nhẹ bắp chân'),
+    G('Stress & thư giãn',
+      'Thở chậm 5–10 phút: hít 4 nhịp, thở ra 6 nhịp',
+      'Viết ra điều đang lo trước khi ngủ',
+      'Chồng massage nhẹ chân, lưng; nghe nhạc nhẹ',
+      'Hạn chế tin tức, mạng xã hội gây lo âu buổi tối',
+      'Cần hỗ trợ nếu mất ngủ hoặc lo âu kéo dài hơn 2 tuần'),
+    'Hỏi bác sĩ nếu ngáy to, ngưng thở khi ngủ, chân bồn chồn',
+    'Không tự dùng thuốc ngủ hoặc thảo dược');
+}
+function wrongEatItems(){
+  return [
+    'Bình tĩnh: ăn nhầm một lần hiếm khi gây bệnh',
+    'Ghi lại món đã ăn, giờ ăn, số lượng, nơi mua',
+    'Theo dõi sốt, ớn lạnh, đau cơ, nôn, tiêu chảy trong 2 tháng',
+    'Có triệu chứng: gọi bác sĩ hoặc đến cơ sở y tế, nói rõ đã ăn gì',
+    'Đi cấp cứu nếu sốt cao, đau đầu dữ dội, cứng cổ, lú lẫn, co giật',
+    'Ăn thực phẩm bị thu hồi: báo bác sĩ dù chưa có triệu chứng',
+    G('Xử trí theo từng trường hợp',
+      'Lỡ uống rượu bia: ngừng ngay, báo bác sĩ',
+      'Ăn đồ chưa chín kỹ: uống nhiều nước, theo dõi nôn, tiêu chảy',
+      'Ăn cá thủy ngân cao một lần: tránh ăn tiếp, không cần quá lo',
+      'Uống thuốc hoặc thảo dược không rõ: ngừng và hỏi bác sĩ')
+  ];
+}
+function nutriGroups(){
+  return [
+    G('Nên ăn (gợi ý cụ thể)',
+      'Đạm: thịt nạc, trứng chín kỹ, đậu hũ, các loại đậu',
+      'Cá nấu chín 2 bữa/tuần: cá hồi, cá mòi, cá cơm',
+      'Rau xanh đậm: rau muống, cải bó xôi, bông cải xanh',
+      'Trái cây tươi: cam, ổi, chuối, bơ',
+      'Ngũ cốc nguyên hạt, khoai, yến mạch',
+      'Sữa, sữa chua, phô mai tiệt trùng',
+      'Hạt và dầu tốt: óc chó, hạt chia, mè, dầu ô liu'),
+    G('Hạn chế (không cấm hẳn)',
+      'Caffeine dưới 200 mg/ngày (cà phê, trà, cola)',
+      'Trà thảo mộc tối đa 4 ly/ngày',
+      'Cá ngừ và cá thu: ăn có giới hạn',
+      'Đồ ngọt, nước ngọt, đồ chiên, quá mặn',
+      'Thịt nguội, giò chả, xúc xích: chỉ ăn khi đã hâm nóng bốc hơi'),
+    G('Tránh hoàn toàn',
+      'Rượu bia, thuốc lá',
+      'Sống hoặc tái: gỏi cá, sashimi, tiết canh, hàu sống, bò tái',
+      'Trứng sống hoặc lòng đào',
+      'Gan động vật, pa-tê, vitamin A liều cao',
+      'Sữa chưa tiệt trùng; phô mai brie, camembert, phô mai xanh',
+      'Cá thủy ngân cao (cá kiếm, cá mập, cá thu vua) và cá hun khói'),
+    G('Lỡ ăn nhầm thì sao?',wrongEatItems())
+  ];
+}
+function visitItems(){
+  return [N(VISIT_FIRST),
+    N('Đi khám sớm hơn nếu ra máu, đau bụng, từng sảy thai, có bệnh nền'),
+    N('Chuẩn bị: ngày đầu kỳ kinh cuối, bệnh sử, thuốc đang dùng, câu hỏi'),
+    N('Chọn 1 bác sĩ chính và theo lịch bác sĩ hẹn')];
+}
+function commuteGroup(){
+  return G('Đi lại & đi làm',
+    'Hỏi bác sĩ trước nếu từng sảy thai, ra máu, đau bụng hoặc được dặn nghỉ',
+    'Đội mũ bảo hiểm, đi chậm, tránh giờ cao điểm, mưa, đường xấu',
+    'Hôm mệt hoặc ốm nghén nặng: đi taxi, xe công nghệ hoặc để chồng đưa đón',
+    'Dừng xe nghỉ nếu chóng mặt, đau bụng, ra máu; đến cơ sở y tế nếu không đỡ');
+}
+function byTitle(n,t){
+  if(n.t===t)return n;
+  for(var i=0;i<n.c.length;i++){var r=byTitle(n.c[i],t);if(r)return r;}
+  return null;
+}
+var FIX_D=[["Caffeine dưới 200 mg/ngày (cà phê, trà, cola)", "Mức cao liên quan đến nguy cơ biến chứng thai kỳ nên cần giảm càng nhiều càng tốt. 200 mg tương đương khoảng 1–2 tách cà phê. Trà, cola, nước tăng lực, sô cô la cũng có caffeine. Nếu từng sảy thai hãy hỏi bác sĩ.", "Mức cao liên quan đến nguy cơ biến chứng thai kỳ nên cần giảm càng nhiều càng tốt. Cà phê phin ở Việt Nam thường pha từ robusta, có lượng caffeine khoảng gấp đôi arabica, nên một ly phin đậm có thể đã chiếm phần lớn mức 200 mg; cà phê pha loãng hoặc arabica thì khoảng 1–2 tách. Trà, trà sữa, cola, nước tăng lực, sô cô la cũng có caffeine. Nếu từng sảy thai hãy hỏi bác sĩ."], ["Vỡ ối: nước chảy thành dòng hoặc rỉ liên tục, không tự kiểm soát", "Chỉ khoảng 1 trong 10 phụ nữ thấy nước ối trào ra thành dòng; nhiều người chỉ thấy ẩm ướt liên tục. Nước ối thường không đau. Nếu không chắc là nước ối hay són tiểu, cứ đến bệnh viện kiểm tra.", "Nước ối có thể trào ra thành dòng hoặc chỉ rỉ ít nhưng liên tục, thường trong và không đau. Nếu không chắc là nước ối hay són tiểu, cứ đến bệnh viện kiểm tra."], ["Lần khám đầu: tuần 6–8 (sau khi trễ kinh, thử que 2 vạch)", "Thường nên khám lần đầu khi thai khoảng 6–8 tuần, tức khoảng 1–3 tuần sau khi trễ kinh. Lúc này siêu âm thường thấy túi thai trong tử cung và tim thai. Đi quá sớm (trước tuần 5–6) có thể chưa thấy gì dù thai vẫn bình thường.", "Thường nên khám lần đầu khi thai khoảng 6–8 tuần, tức khoảng 2–4 tuần sau ngày đáng lẽ có kinh. Lúc này siêu âm thường thấy túi thai trong tử cung và tim thai. Đi quá sớm (trước tuần 5–6) có thể chưa thấy gì dù thai vẫn bình thường."], ["Từ tuần 37: sẵn sàng bất cứ lúc nào, hạn chế đi xa", "Từ tuần 37 thai được xem là đủ tháng, có thể chuyển dạ bất cứ lúc nào. Xe đủ xăng, điện thoại đầy pin, người đưa đón sẵn sàng, tránh đi xa.", "Từ tuần 37, em bé sinh ra không còn bị xem là sinh non, nên có thể chuyển dạ bất cứ lúc nào. Xe đủ xăng, điện thoại đầy pin, người đưa đón sẵn sàng, tránh đi xa."], ["Cá ngừ và cá thu: ăn có giới hạn", "Hàm lượng thủy ngân cao hơn các loại cá khác. Hỏi bác sĩ mức phù hợp, không ăn thường xuyên.", "Cá ngừ (nhất là cá ngừ đại dương cỡ lớn) và một số loại cá thu có hàm lượng thủy ngân cao hơn các loại cá nhỏ như cá cơm, cá mòi. Không cần cấm hẳn nhưng không ăn thường xuyên; hỏi bác sĩ mức phù hợp."], ["Chồng nghỉ 5 ngày (sinh thường), 7 ngày (sinh mổ)", "Chồng đóng BHXH được nghỉ hưởng chế độ khi vợ sinh: 5 ngày nếu sinh thường, 7 ngày nếu sinh mổ, nhiều hơn khi sinh đôi. Từ 1/7/2026, vợ sinh con thứ hai thì chồng được nghỉ 10 ngày. Hỏi phòng nhân sự về thời hạn nghỉ và hồ sơ.", "Chồng đóng BHXH được nghỉ hưởng chế độ khi vợ sinh: 5 ngày làm việc nếu sinh thường; 7 ngày nếu sinh mổ hoặc sinh con dưới 32 tuần; nhiều hơn khi sinh đôi trở lên. Từ 1/7/2026, vợ sinh con thứ hai thì chồng được nghỉ 10 ngày làm việc. Hỏi phòng nhân sự về thời hạn nghỉ và hồ sơ."], ["Trợ cấp một lần: 5,06 triệu/con (sinh từ 1/7/2026)", "Bằng 2 lần mức lương cơ sở tại tháng sinh; từ 1/7/2026 lương cơ sở là 2,53 triệu. Nếu vợ không đủ điều kiện nhưng chồng đóng BHXH, chồng có thể được nhận khoản này. Người đóng BHXH tự nguyện có khoản trợ cấp riêng thấp hơn (khoảng 2 triệu/con).", "Bằng 2 lần mức lương cơ sở tại tháng sinh; từ 1/7/2026 lương cơ sở là 2,53 triệu. Nếu vợ không đủ điều kiện nhưng chồng đóng BHXH, chồng có thể được nhận khoản này. Người đóng BHXH tự nguyện có khoản trợ cấp riêng thấp hơn (khoảng 2 triệu/con). Theo Luật Dân số 2025, một số trường hợp (như sinh đủ hai con trước 35 tuổi, sống ở địa phương có mức sinh thấp) có thể được hỗ trợ thêm; hỏi UBND phường, xã về thời điểm và thủ tục."]];
+var FIX_F=[["Khi nào nên đi khám thai lần đầu?", "Thường nên đi khi thai khoảng 6–8 tuần, tức 1–3 tuần sau khi trễ kinh và thử que hai vạch. Lúc này siêu âm thường thấy túi thai trong tử cung và tim thai.\nĐi sớm hơn ngay khi có que hai vạch nếu có ra máu, đau bụng dưới (nhất là đau một bên), từng sảy thai hoặc thai ngoài tử cung, hoặc có bệnh nền như tiểu đường, cao huyết áp, tuyến giáp.", "Thường nên đi khi thai khoảng 6–8 tuần, tức khoảng 2–4 tuần sau ngày đáng lẽ có kinh và thử que hai vạch. Lúc này siêu âm thường thấy túi thai trong tử cung và tim thai.\nĐi sớm hơn ngay khi có que hai vạch nếu có ra máu, đau bụng dưới (nhất là đau một bên), từng sảy thai hoặc thai ngoài tử cung, hoặc có bệnh nền như tiểu đường, cao huyết áp, tuyến giáp."], ["Bà bầu có được uống cà phê, trà sữa không?", "Có thể dùng ít. Khuyến cáo giữ caffeine dưới 200 mg/ngày, tương đương khoảng 1–2 tách cà phê. Trà, trà sữa, cola, nước tăng lực, sô cô la cũng có caffeine nên cần cộng dồn.\nTrà sữa thường nhiều đường, dễ tăng cân và tăng nguy cơ tiểu đường thai kỳ, nên hạn chế.", "Có thể dùng ít. Khuyến cáo giữ caffeine dưới 200 mg/ngày. Cà phê phin ở Việt Nam thường pha từ robusta, có lượng caffeine khoảng gấp đôi arabica, nên một ly phin đậm có thể đã chiếm phần lớn mức này; cà phê pha loãng thì khoảng 1–2 tách. Trà, trà sữa, cola, nước tăng lực, sô cô la cũng có caffeine nên cần cộng dồn.\nTrà sữa thường nhiều đường, dễ tăng cân và tăng nguy cơ tiểu đường thai kỳ, nên hạn chế."], ["Bị cảm, đau đầu có được tự uống thuốc không?", "Không nên tự mua thuốc. Paracetamol thường là lựa chọn giảm đau, hạ sốt được ưu tiên khi mang thai, nhưng vẫn nên hỏi bác sĩ hoặc dược sĩ về liều.\nTránh ibuprofen, aspirin và các thuốc giảm đau chống viêm khác nếu không có chỉ định, nhất là ở nửa sau thai kỳ. Nhiều thuốc cảm phối hợp và thảo dược không phù hợp với bà bầu.", "Không nên tự mua thuốc. Paracetamol vẫn là lựa chọn giảm đau, hạ sốt được các hội sản khoa khuyến cáo đầu tiên khi mang thai, nhưng nên dùng liều thấp nhất có hiệu quả, trong thời gian ngắn nhất cần thiết, và hỏi bác sĩ hoặc dược sĩ. Năm 2025, cơ quan dược phẩm Mỹ (FDA) bắt đầu bổ sung cảnh báo về mối liên quan có thể có khi dùng kéo dài trong thai kỳ, dù chưa chứng minh được quan hệ nhân quả; sốt cao không được điều trị cũng có hại cho thai.\nTránh ibuprofen, aspirin và các thuốc giảm đau chống viêm khác nếu không có chỉ định, nhất là từ nửa sau thai kỳ. Nhiều thuốc cảm phối hợp và thảo dược không phù hợp với bà bầu."]];
+function addFaq11(arr){addFaqRange(arr,20,30);}
+function addFaqRange(arr,from,to){
+  FAQ_SEED.slice(from,to).forEach(function(x){
+    if(!arr.some(function(f){return f.q===x.q;}))arr.push({id:nid(),q:x.q,a:x.a});
+  });
+}
+function fixFaq(arr){
+  arr.forEach(function(f){FIX_F.forEach(function(x){if(f.q===x[0]&&f.a===x[1])f.a=x[2];});});
+}
+function migrate(r,from){
+  from=from||0;
+  if(from<10){
+    (function w(n){FIX_D.forEach(function(x){if(n.t===x[0]&&n.d===x[1])n.d=x[2];});n.c.forEach(w);})(r);
+  }
+  if(from<3){
+    var kt=byTitle(r,'Khám thai định kỳ');
+    if(kt&&!kt.c.some(function(c){return c.t===VISIT_FIRST;}))kt.c=visitItems().concat(kt.c);
+    var nh=byTitle(r,'Nhà cửa & gia đình');
+    if(nh&&!byTitle(nh,'Đi lại & đi làm')){
+      var i=-1;nh.c.forEach(function(c,k){if(c.t==='Việc nhà & an toàn')i=k;});
+      nh.c.splice(i+1,0,commuteGroup());
+    }
+  }
+  if(from<4){
+    var dd=byTitle(r,'Dinh dưỡng');
+    if(dd&&!byTitle(dd,'Nên ăn (gợi ý cụ thể)')){
+      var drop=['Ăn đa dạng: đạm, rau, trái cây, sữa','Tránh rượu bia, đồ sống, tái; caffeine dưới 200 mg/ngày'];
+      dd.c=dd.c.filter(function(c){return drop.indexOf(c.t)<0;}).concat(nutriGroups());
+    }
+  }
+  if(from<5){
+    var vg=byTitle(r,'Vận động & giấc ngủ');
+    if(vg&&!byTitle(r,'Giấc ngủ')){
+      var par=byTitle(r,'Sức khỏe của mẹ');
+      var idx=par?par.c.indexOf(vg):-1;
+      if(idx>=0){
+        var orig=['Đi bộ 20–30 phút, yoga bầu, tập thở','Tránh vận động mạnh, mang vác nặng','Ngủ nghiêng, kê gối bầu, nghỉ trưa khi mệt'];
+        var untouched=vg.c.length===3&&vg.c.every(function(c){return orig.indexOf(c.t)>=0;});
+        if(untouched)par.c.splice(idx,1,exerciseGroup(),sleepGroup());
+        else par.c.splice(idx+1,0,exerciseGroup(),sleepGroup());
+      }
+    }
+  }
+  if(from<9){
+    var tc=byTitle(r,'Tài chính & công việc');
+    if(tc&&!byTitle(tc,'Dự trù chi phí mức trung bình: khoảng 45–80 triệu')){
+      tc.c=tc.c.filter(function(c){return c.t!=='Lập ngân sách và quỹ dự phòng (sinh mổ, bé cần chăm sóc)';});
+      tc.c=financeGroups().concat(tc.c);
+      tc.open=true;
+    }
+  }
+  if(from<8){
+    var hl=byTitle(r,'Học & lên kế hoạch');
+    if(hl&&!byTitle(hl,'Khi nào đi bệnh viện')){
+      hl.c=hl.c.filter(function(c){return c.t!=='Biết dấu hiệu chuyển dạ thật';});
+      var at=-1;hl.c.forEach(function(c,k){if(c.t==='Có sẵn số điện thoại và phương tiện đi lúc nửa đêm')at=k;});
+      var add=laborGroups();
+      if(at<0)hl.c=hl.c.concat(add);else hl.c.splice.apply(hl.c,[at,0].concat(add));
+      hl.open=true;
+    }
+  }
+  if(from<7){
+    var tt=byTitle(r,'Tinh thần & vợ chồng');
+    if(tt){
+      var A1='Khen ngợi, động viên mỗi ngày',N1='Khen ngợi, hỏi thăm cảm xúc, chia sẻ nỗi lo hai vợ chồng';
+      var A2='Hành động nhỏ: massage, nấu món vợ thích',N2='Hành động nhỏ: massage, nấu món vợ thích, cùng đi dạo';
+      var drop2=['Hỏi thăm cảm xúc, chia sẻ nỗi lo của cả hai','Cùng thư giãn: đi dạo, nghe nhạc'];
+      var hasNew=tt.c.some(function(c){return c.t===N1||c.t===N2;});
+      if(!hasNew){
+        tt.c.forEach(function(c){
+          if(c.t===A1){c.t=N1;c.d=DESC[N1];}
+          else if(c.t===A2){c.t=N2;c.d=DESC[N2];}
+        });
+        tt.c=tt.c.filter(function(c){return drop2.indexOf(c.t)<0;});
+      }
+    }
+  }
+  if(from<6){
+    var le=byTitle(r,'Lỡ ăn nhầm thì sao?');
+    if(le&&!le.c.length){le.c=le.c.concat(G('x',wrongEatItems()).c);le.open=true;}
+  }
+}
+
+function seed(){
+  return G('Chăm sóc vợ mang thai',
+    G('Sức khỏe của mẹ',
+      G('Khám thai định kỳ',
+        visitItems(),
+        'Tam cá nguyệt 1: siêu âm tim thai, xét nghiệm',
+        'Đo độ mờ da gáy (tuần 11–13)',
+        'Sàng lọc dị tật: Double/Triple test hoặc NIPT',
+        'Siêu âm hình thái (tuần 18–22)',
+        'Nghiệm pháp dung nạp đường (tuần 24–28)',
+        'Từ tuần 28: khám dày hơn, theo dõi ngôi thai',
+        'Tiêm phòng theo tư vấn bác sĩ'),
+      G('Dinh dưỡng',
+        'Bổ sung folic, sắt, canxi, DHA theo chỉ định',
+        'Chia nhỏ bữa nếu ốm nghén, uống đủ nước',
+        nutriGroups()),
+      exerciseGroup(),
+      sleepGroup(),
+      G('Dấu hiệu cần đi khám ngay (nắm rõ)',
+        'Ra máu, đau bụng dữ dội, rỉ hoặc vỡ ối',
+        'Thai máy giảm hoặc không máy',
+        'Đau đầu dữ dội, nhìn mờ, phù đột ngột',
+        'Sốt cao, nôn nhiều không ăn được')
+    ),
+    G('Tinh thần & vợ chồng',
+      'Lắng nghe, không phán xét, không bình luận cân nặng',
+      'Khen ngợi, hỏi thăm cảm xúc, chia sẻ nỗi lo hai vợ chồng',
+      'Hành động nhỏ: massage, nấu món vợ thích, cùng đi dạo',
+      'Trao đổi cởi mở về sự gần gũi',
+      'Theo dõi buồn bã, lo âu kéo dài hơn 2 tuần'),
+    G('Nhà cửa & gia đình',
+      G('Việc nhà & an toàn',
+        'Đảm nhận việc nặng, việc phải cúi',
+        'Tránh hóa chất, thuốc diệt côn trùng, phân mèo',
+        'Rửa sạch rau củ, nấu chín kỹ',
+        'Bỏ thuốc hoặc không hút gần vợ',
+        'Không tự mua thuốc, thực phẩm chức năng',
+        'Lái xe êm, thắt dây an toàn; hỏi bác sĩ trước khi đi xa'),
+      commuteGroup(),
+      G('Gia đình & xã hội',
+        'Thống nhất lấy bác sĩ làm chuẩn',
+        'Đứng về phía vợ khi bị áp lực',
+        'Phân công ai giúp sau sinh, sắp xếp lịch khách thăm',
+        'Tham gia nhóm bố mẹ trẻ')
+    ),
+    G('Chuẩn bị đón con',
+      G('Học & lên kế hoạch',
+        'Tham gia lớp tiền sản, dùng nguồn y khoa đáng tin',
+        'Chọn bệnh viện, tìm hiểu sinh thường và sinh mổ',
+        laborGroups(),
+        'Có sẵn số điện thoại và phương tiện đi lúc nửa đêm'),
+      G('Túi đồ đi sinh (tuần 34–36)',
+        'Giấy tờ: CCCD, sổ khám thai, thẻ BHYT',
+        'Đồ của mẹ: quần áo, đồ vệ sinh, băng vệ sinh',
+        'Đồ của bé: quần áo, tã, khăn, mũ',
+        'Sạc điện thoại'),
+      G('Nhà cửa',
+        'Nôi hoặc giường, chỗ thay tã, đồ tắm',
+        'Ghế ô tô an toàn cho trẻ sơ sinh'),
+      G('Tài chính & công việc',
+        financeGroups(),
+        'Tìm hiểu chế độ thai sản, chuẩn bị hồ sơ và hạn nộp',
+        'Sắp xếp lịch đi khám cùng vợ, xin nghỉ khi vợ sinh')
+    ),
+    G('Sau sinh',
+      G('Hồi phục của mẹ',
+        'Theo dõi sốt, ra máu nhiều, vết mổ/khâu',
+        'Khám sau sinh (4–6 tuần)'),
+      G('Chăm con',
+        'Hỗ trợ cho con bú, thay tã, bế bé ợ hơi',
+        'Chia ca đêm để vợ ngủ liền',
+        'Theo dõi lịch tiêm chủng, khám cho bé'),
+      G('Tinh thần sau sinh',
+        'Theo dõi baby blues trong 1–2 tuần đầu',
+        'Đi khám sớm nếu buồn, lo âu kéo dài')
+    )
+  );
+}
+
+function norm(x){
+  if(!x||typeof x.t!=='string')throw new Error('bad');
+  return {id:nid(),t:x.t.slice(0,200),d:typeof x.d==='string'?x.d.slice(0,600):(DESC[x.t]||''),done:!!x.done,open:x.open!==false,c:Array.isArray(x.c)?x.c.map(norm):[]};
+}
+function normFaq(arr){
+  return arr.filter(function(x){return x&&typeof x.q==='string';}).map(function(x){
+    return {id:nid(),q:x.q.slice(0,300),a:String(x.a||'').slice(0,3000)};
+  });
+}
+function seedFaq(){return FAQ_SEED.map(function(x){return {id:nid(),q:x.q,a:x.a};});}
+function clampZ(z){z=+z;if(!isFinite(z)||z<=0)z=1;return Math.min(1.4,Math.max(.5,Math.round(z*10)/10));}
+
+var root=null,view='map',zoom=1,selected=null,editing=null,pendingFocus=null,toastTimer=null,undoFn=null,faq=null,faqOpen={},faqEdit=null,faqQuery='';
+try{
+  var s=JSON.parse(localStorage.getItem(KEY)||'null');
+  if(s&&s.root){root=norm(s.root);if((s.v||0)<12)migrate(root,s.v||0);view=(s.view==='list'||s.view==='faq')?s.view:'map';if(Array.isArray(s.faq)){faq=normFaq(s.faq);if((s.v||0)<10)fixFaq(faq);if((s.v||0)<11)addFaq11(faq);if((s.v||0)<12)addFaqRange(faq,30,31);}zoom=clampZ(s.zoom);}
+}catch(e){}
+if(!root)root=seed();
+if(!faq)faq=seedFaq();
+
+function save(){
+  try{localStorage.setItem(KEY,JSON.stringify({v:12,root:root,faq:faq,view:view,zoom:zoom}));}catch(e){}
+}
+
+/* helpers */
+function el(tag,props){
+  var e=document.createElement(tag);props=props||{};
+  Object.keys(props).forEach(function(k){
+    var v=props[k];
+    if(k==='class')e.className=v;
+    else if(k==='style')e.style.cssText=v;
+    else if(k.indexOf('on')===0)e.addEventListener(k.slice(2),v);
+    else if(v===true)e.setAttribute(k,'');
+    else if(v!==false&&v!=null)e.setAttribute(k,v);
+  });
+  for(var i=2;i<arguments.length;i++){
+    var kids=[].concat(arguments[i]);
+    for(var j=0;j<kids.length;j++){var c=kids[j];if(c==null||c===false)continue;e.append(c.nodeType?c:document.createTextNode(c));}
+  }
+  return e;
+}
+function stats(n){
+  if(!n.c.length)return [n.done?1:0,1];
+  var d=0,t=0;n.c.forEach(function(c){var r=stats(c);d+=r[0];t+=r[1];});return [d,t];
+}
+function setAll(n,v){if(!n.c.length)n.done=v;else n.c.forEach(function(c){setAll(c,v);});}
+function find(id,n,p){
+  n=n||root;p=p||null;
+  if(n.id===id)return {n:n,p:p};
+  for(var i=0;i<n.c.length;i++){var r=find(id,n.c[i],n);if(r)return r;}
+  return null;
+}
+function eachNode(n,f,d){d=d||0;f(n,d);n.c.forEach(function(c){eachNode(c,f,d+1);});}
+
+/* actions */
+function toggle(n){var r=stats(n);setAll(n,r[0]!==r[1]);render();}
+function fold(n){n.open=(n.open===false);render();}
+function startEdit(id){editing={id:id,isNew:false};selected=id;render();}
+function addChild(id){
+  var r=find(id);if(!r)return;
+  var k=N('');r.n.open=true;r.n.c.push(k);
+  editing={id:k.id,isNew:true};selected=k.id;render();
+}
+function addSibling(id){
+  var r=find(id);if(!r||!r.p)return;
+  var k=N(''),i=r.p.c.indexOf(r.n);r.p.c.splice(i+1,0,k);
+  editing={id:k.id,isNew:true};selected=k.id;render();
+}
+function commit(id,val){
+  if(!editing||editing.id!==id)return;
+  var isNew=editing.isNew;editing=null;
+  val=(val||'').trim();
+  var r=find(id);if(!r){render();return;}
+  if(!val){ if(isNew&&r.p){r.p.c.splice(r.p.c.indexOf(r.n),1);selected=null;} }
+  else r.n.t=val.slice(0,200);
+  render();
+}
+function cancel(id){
+  if(!editing||editing.id!==id)return;
+  var isNew=editing.isNew;editing=null;
+  if(isNew){var r=find(id);if(r&&r.p){r.p.c.splice(r.p.c.indexOf(r.n),1);selected=null;}}
+  render();
+}
+function del(id){
+  var r=find(id);if(!r||!r.p)return;
+  var snap=JSON.stringify(root),name=r.n.t||'mục trống';
+  r.p.c.splice(r.p.c.indexOf(r.n),1);selected=null;render();
+  toast('Đã xóa “'+(name.length>40?name.slice(0,40)+'…':name)+'”','Hoàn tác',function(){
+    root=norm(JSON.parse(snap));render();
+  });
+}
+function toast(msg,label,fn){
+  var t=document.getElementById('toast');
+  document.getElementById('toastTxt').textContent=msg;
+  var b=document.getElementById('toastBtn');
+  b.textContent=label||'';b.style.display=label?'':'none';
+  undoFn=fn||null;t.classList.add('on');
+  clearTimeout(toastTimer);toastTimer=setTimeout(function(){t.classList.remove('on');undoFn=null;},7000);
+}
+document.getElementById('toastBtn').addEventListener('click',function(){
+  var f=undoFn;undoFn=null;document.getElementById('toast').classList.remove('on');if(f)f();
+});
+
+/* tooltip + notes */
+var tipTimer=null,canHover=window.matchMedia&&window.matchMedia('(hover:hover)').matches;
+function hideTip(){clearTimeout(tipTimer);var t=document.getElementById('tip');t.style.display='none';}
+function showTip(elm,n){
+  if(editing||!n.d||!document.body.contains(elm))return;
+  var t=document.getElementById('tip');
+  t.textContent='';
+  t.appendChild(el('b',null,n.t));
+  t.appendChild(document.createTextNode(n.d));
+  t.style.display='block';
+  var rc=elm.getBoundingClientRect(),tw=t.offsetWidth,th=t.offsetHeight;
+  var x=Math.min(Math.max(8,rc.left),window.innerWidth-tw-8);
+  var y=rc.bottom+8;
+  if(y+th>window.innerHeight-8)y=Math.max(8,rc.top-th-8);
+  t.style.left=x+'px';t.style.top=y+'px';
+}
+function bindTip(elm,n){
+  if(!n.d||!canHover)return;
+  elm.addEventListener('mouseenter',function(){clearTimeout(tipTimer);tipTimer=setTimeout(function(){showTip(elm,n);},TIP_DELAY);});
+  elm.addEventListener('mouseleave',hideTip);
+  elm.addEventListener('mousedown',hideTip);
+}
+var noteDlg=document.getElementById('noteDlg'),noteTxt=document.getElementById('noteTxt'),noteId=null;
+function openNote(id){
+  var r=find(id);if(!r)return;
+  hideTip();noteId=id;
+  document.getElementById('noteTitle').textContent='Ghi chú: '+(r.n.t||'mục mới');
+  noteTxt.value=r.n.d||'';
+  if(noteDlg.showModal)noteDlg.showModal();else noteDlg.setAttribute('open','');
+  noteTxt.focus();
+}
+document.getElementById('noteCancel').addEventListener('click',function(){noteDlg.close();});
+document.getElementById('noteSave').addEventListener('click',function(){
+  var r=find(noteId);if(r)r.n.d=noteTxt.value.trim().slice(0,600);
+  noteDlg.close();render();
+});
+
+/* shared pieces */
+function checkbox(n){
+  var r=stats(n);
+  var i=el('input',{type:'checkbox','aria-label':'Hoàn thành: '+(n.t||'mục mới'),onchange:function(){toggle(n);}});
+  i.checked=r[0]===r[1]&&r[1]>0;i.indeterminate=r[0]>0&&r[0]<r[1];
+  return i;
+}
+function textPart(n){
+  if(editing&&editing.id===n.id){
+    var inp=el('input',{class:'edit',type:'text',maxlength:'200','aria-label':'Nội dung mục',placeholder:'Nhập nội dung rồi nhấn Enter'});
+    inp.value=n.t;
+    inp.addEventListener('keydown',function(e){
+      if(e.key==='Enter'){e.preventDefault();commit(n.id,inp.value);}
+      else if(e.key==='Escape'){e.preventDefault();cancel(n.id);}
+    });
+    inp.addEventListener('blur',function(){commit(n.id,inp.value);});
+    inp.addEventListener('click',function(e){e.stopPropagation();});
+    pendingFocus=inp;return inp;
+  }
+  return el('span',{class:'tx',title:n.t,ondblclick:function(){startEdit(n.id);}},n.t||'(trống)');
+}
+function tools(n,isRoot){
+  function b(label,fn,cls){
+    return el('button',{type:'button',class:cls||'',onmousedown:function(e){e.preventDefault();},onclick:function(e){e.stopPropagation();fn();}},label);
+  }
+  return el('div',{class:'tb'},el('div',{class:'tbi'},
+    b('+ Con',function(){addChild(n.id);}),
+    !isRoot&&b('+ Cùng cấp',function(){addSibling(n.id);}),
+    b('Sửa',function(){startEdit(n.id);}),
+    b('Ghi chú',function(){openNote(n.id);}),
+    !isRoot&&b('Xóa',function(){del(n.id);},'danger')
+  ));
+}
+function badge(n,r){return el('span',{class:'bd'+(r[0]===r[1]?' full':''),title:'Số mục đã xong'},r[0]+'/'+r[1]);}
+function foldBtn(n){
+  if(!n.c.length)return el('span',{class:'tg ph'});
+  var open=n.open!==false;
+  return el('button',{type:'button',class:'tg','aria-label':open?'Thu gọn':'Mở rộng','aria-expanded':String(open),onclick:function(e){e.stopPropagation();fold(n);}},open?'▾':'▸');
+}
+function select(id,elm){
+  selected=id;
+  var old=document.querySelectorAll('.sel');for(var i=0;i<old.length;i++)old[i].classList.remove('sel');
+  elm.classList.add('sel');
+}
+
+/* map view */
+function layout(){
+  var items=[],links=[],cur=0,maxD=0;
+  (function go(n,d,color,parent){
+    var kids=n.open!==false?n.c:[];
+    var rec={n:n,d:d,color:color,x:d*(W+GX),y:0};
+    var y;
+    if(!kids.length){y=cur*ROW;cur++;}
+    else{
+      var ys=kids.map(function(k,i){return go(k,d+1,d===0?BR[i%BR.length]:color,rec);});
+      y=(ys[0]+ys[ys.length-1])/2;
+    }
+    rec.y=y;items.push(rec);if(parent)links.push({p:parent,c:rec});if(d>maxD)maxD=d;
+    return y;
+  })(root,0,'var(--ink)',null);
+  return {items:items,links:links,w:(maxD+1)*(W+GX)-GX,h:Math.max(cur,1)*ROW-(ROW-H)};
+}
+function renderMap(host){
+  var L=layout();
+  var cw=L.w+PADX*2,ch=L.h+PADY+PADX;
+  var sizer=el('div',{class:'sizer',style:'width:'+(cw*zoom)+'px;height:'+(ch*zoom)+'px'});
+  var canvas=el('div',{class:'canvas',style:'width:'+cw+'px;height:'+ch+'px;transform:scale('+zoom+')'});
+  var ns='http://www.w3.org/2000/svg';
+  var svg=document.createElementNS(ns,'svg');
+  svg.setAttribute('width',cw);svg.setAttribute('height',ch);
+  L.links.forEach(function(l){
+    var x1=l.p.x+W+PADX,y1=l.p.y+H/2+PADY,x2=l.c.x+PADX,y2=l.c.y+H/2+PADY,m=GX/2;
+    var p=document.createElementNS(ns,'path');
+    p.setAttribute('d','M'+x1+','+y1+' C'+(x1+m)+','+y1+' '+(x2-m)+','+y2+' '+x2+','+y2);
+    p.setAttribute('stroke',l.c.color);
+    svg.appendChild(p);
+  });
+  canvas.appendChild(svg);
+  L.items.forEach(function(rec){
+    var n=rec.n,r=stats(n),isRoot=rec.d===0,leaf=!n.c.length;
+    var cls='node'+(isRoot?' root':'')+(leaf&&n.done?' done':'')+(selected===n.id?' sel':'');
+    var node=el('div',{class:cls,style:'left:'+(rec.x+PADX)+'px;top:'+(rec.y+PADY)+'px;--c:'+rec.color,
+      onclick:function(e){select(n.id,node);}},
+      foldBtn(n),checkbox(n),textPart(n),n.c.length?badge(n,r):null,n.d?el('span',{class:'dot'}):null,tools(n,isRoot));
+    bindTip(node,n);
+    canvas.appendChild(node);
+  });
+  sizer.appendChild(canvas);host.appendChild(sizer);
+}
+
+/* list view */
+function listItem(n,d,color,idx){
+  var r=stats(n),leaf=!n.c.length;
+  var row=el('div',{class:'row'+(d===0?' root':'')+(d===1?' top':'')+(leaf&&n.done?' done':'')+(selected===n.id?' sel':''),
+    style:'--c:'+color+';margin-left:'+(d*22)+'px',
+    onclick:function(){select(n.id,row);}},
+    foldBtn(n),checkbox(n),textPart(n),n.c.length?badge(n,r):null,n.d?el('span',{class:'dot'}):null,tools(n,d===0));
+  bindTip(row,n);
+  var li=el('li',null,row);
+  if(n.c.length&&n.open!==false){
+    var ul=el('ul');
+    n.c.forEach(function(k,i){ul.appendChild(listItem(k,d+1,d===0?BR[i%BR.length]:color,i));});
+    li.appendChild(ul);
+  }
+  return li;
+}
+function renderList(host){
+  var wrap=el('div',{class:'list'});
+  var ul=el('ul');ul.appendChild(listItem(root,0,'var(--ink)',0));wrap.appendChild(ul);
+  if(!root.c.length)wrap.appendChild(el('div',{class:'empty'},'Chưa có nhóm nào. Bấm “+ Con” ở dòng đầu để thêm nhóm.'));
+  host.appendChild(wrap);
+}
+
+/* FAQ view */
+function fold(str){return String(str).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/đ/g,'d');}
+function faqBtn(label,fn,cls){
+  return el('button',{type:'button',class:cls||'',onclick:function(e){e.stopPropagation();fn();}},label);
+}
+function faqSaveEdit(f,qv,av){
+  var isNew=faqEdit&&faqEdit.isNew;faqEdit=null;
+  qv=(qv||'').trim();
+  if(!qv){ if(isNew)faq.splice(faq.indexOf(f),1); }
+  else{ f.q=qv.slice(0,300);f.a=(av||'').trim().slice(0,3000);faqOpen[f.id]=true; }
+  render();
+}
+function faqCancel(f){
+  var isNew=faqEdit&&faqEdit.isNew;faqEdit=null;
+  if(isNew)faq.splice(faq.indexOf(f),1);
+  render();
+}
+function faqDelete(f){
+  var snap=JSON.stringify(faq);
+  faq.splice(faq.indexOf(f),1);render();
+  toast('Đã xóa câu hỏi','Hoàn tác',function(){faq=normFaq(JSON.parse(snap));render();});
+}
+function faqMove(f,dir,list){
+  var i=faq.indexOf(f),j=i+dir;if(j<0||j>=faq.length)return;
+  faq[i]=faq[j];faq[j]=f;save();drawFaqList(list,false);
+}
+function faqItem(f,list){
+  var idx=faq.indexOf(f);
+  if(faqEdit&&faqEdit.id===f.id){
+    var qi=el('input',{class:'edit',type:'text',maxlength:'300',placeholder:'Câu hỏi','aria-label':'Câu hỏi'});qi.value=f.q;
+    var ai=el('textarea',{class:'fq-a-in',rows:'7',maxlength:'3000',placeholder:'Câu trả lời','aria-label':'Câu trả lời'});ai.value=f.a;
+    function key(e){
+      if(e.key==='Escape'){e.preventDefault();faqCancel(f);}
+      else if(e.key==='Enter'&&(e.ctrlKey||e.metaKey)){e.preventDefault();faqSaveEdit(f,qi.value,ai.value);}
+    }
+    qi.addEventListener('keydown',function(e){if(e.key==='Enter'&&!e.ctrlKey&&!e.metaKey){e.preventDefault();ai.focus();}else key(e);});
+    ai.addEventListener('keydown',key);
+    var card=el('div',{class:'fq-item editing'},qi,ai,
+      el('div',{class:'fq-hint'},'Ctrl + Enter để lưu, Esc để hủy.'),
+      el('div',{class:'fq-acts'},faqBtn('Hủy',function(){faqCancel(f);}),faqBtn('Lưu',function(){faqSaveEdit(f,qi.value,ai.value);},'primary')));
+    card._focus=qi;
+    return card;
+  }
+  var open=!!faqOpen[f.id];
+  var head=el('button',{type:'button',class:'fq-q','aria-expanded':String(open),onclick:function(){faqOpen[f.id]=!open;drawFaqList(list,false);}},
+    el('span',{class:'fq-n'},(idx+1)+'.'),el('span',{class:'fq-qt'},f.q),el('span',{class:'fq-chev','aria-hidden':'true'},open?'−':'+'));
+  var item=el('div',{class:'fq-item'},head);
+  if(open){
+    item.appendChild(el('div',{class:'fq-body'},
+      el('p',{class:'fq-a'+(f.a?'':' emptya')},f.a||'Chưa có câu trả lời. Bấm Sửa để thêm.'),
+      el('div',{class:'fq-acts'},
+        faqBtn('Sửa',function(){faqEdit={id:f.id,isNew:false};render();}),
+        idx>0&&faqBtn('Lên',function(){faqMove(f,-1,list);}),
+        idx<faq.length-1&&faqBtn('Xuống',function(){faqMove(f,1,list);}),
+        faqBtn('Xóa',function(){faqDelete(f);},'danger'))));
+  }
+  return item;
+}
+function drawFaqList(list,focus){
+  list.textContent='';
+  var qn=fold(faqQuery.trim());
+  var items=faq.filter(function(f){return !qn||(faqEdit&&faqEdit.id===f.id)||fold(f.q+' '+f.a).indexOf(qn)>=0;});
+  list.appendChild(el('p',{class:'fq-count'},qn?(items.length+' kết quả'):(faq.length+' câu hỏi. Bấm vào câu hỏi để xem câu trả lời.')));
+  if(!items.length){
+    list.appendChild(el('div',{class:'empty'},qn?'Không có câu nào khớp. Thử từ khóa khác.':'Chưa có câu hỏi nào. Bấm “+ Thêm câu hỏi” để bắt đầu.'));
+    return;
+  }
+  var toFocus=null;
+  items.forEach(function(f){var c=faqItem(f,list);if(c._focus)toFocus=c._focus;list.appendChild(c);});
+  if(focus&&toFocus){setTimeout(function(){toFocus.focus();toFocus.select();},0);}
+}
+function renderFaq(host){
+  var wrap=el('div',{class:'faq'});
+  var search=el('input',{type:'search',class:'fq-search',placeholder:'Tìm trong câu hỏi và câu trả lời','aria-label':'Tìm câu hỏi'});
+  search.value=faqQuery;
+  var list=el('div',{class:'fq-list'});
+  search.addEventListener('input',function(){faqQuery=search.value;drawFaqList(list,false);});
+  wrap.appendChild(el('div',{class:'fq-bar'},search,
+    el('button',{type:'button',class:'btn',onclick:function(){
+      var it={id:nid(),q:'',a:''};faq.unshift(it);faqEdit={id:it.id,isNew:true};faqQuery='';render();
+    }},'+ Thêm câu hỏi'),
+    el('button',{type:'button',class:'btn',onclick:function(){faq.forEach(function(f){faqOpen[f.id]=true;});drawFaqList(list,false);}},'Mở tất cả'),
+    el('button',{type:'button',class:'btn',onclick:function(){faqOpen={};drawFaqList(list,false);}},'Đóng tất cả')));
+  wrap.appendChild(list);
+  host.appendChild(wrap);
+  drawFaqList(list,true);
+}
+
+/* main render */
+function render(){
+  var host=document.getElementById('view');
+  var sx=host.scrollLeft,sy=host.scrollTop;
+  pendingFocus=null;hideTip();
+  host.className=view==='map'?'map':'';
+  host.textContent='';
+  if(view==='map')renderMap(host);else if(view==='list')renderList(host);else renderFaq(host);
+  host.scrollLeft=sx;host.scrollTop=sy;
+
+  var r=stats(root);
+  document.getElementById('title').textContent=root.t;
+  document.title=root.t;
+  document.getElementById('barfill').style.width=(r[1]?Math.round(r[0]/r[1]*100):0)+'%';
+  document.getElementById('progtxt').textContent='Đã xong '+r[0]+'/'+r[1]+' mục ('+(r[1]?Math.round(r[0]/r[1]*100):0)+'%)';
+  document.getElementById('tabMap').setAttribute('aria-pressed',String(view==='map'));
+  document.getElementById('tabList').setAttribute('aria-pressed',String(view==='list'));
+  document.getElementById('tabFaq').setAttribute('aria-pressed',String(view==='faq'));
+  document.getElementById('expandAll').style.display=view==='faq'?'none':'';
+  document.getElementById('collapseAll').style.display=view==='faq'?'none':'';
+  document.getElementById('zoomBox').style.display=view==='map'?'':'none';
+  document.getElementById('zVal').textContent=Math.round(zoom*100)+'%';
+  save();
+  if(pendingFocus){pendingFocus.focus();pendingFocus.select();}
+}
+
+/* header controls */
+function setView(v){view=v;var h=document.getElementById('view');h.scrollLeft=0;h.scrollTop=0;render();}
+document.getElementById('tabMap').addEventListener('click',function(){setView('map');});
+document.getElementById('tabList').addEventListener('click',function(){setView('list');});
+document.getElementById('tabFaq').addEventListener('click',function(){setView('faq');});
+document.getElementById('expandAll').addEventListener('click',function(){eachNode(root,function(n){n.open=true;});render();});
+document.getElementById('collapseAll').addEventListener('click',function(){eachNode(root,function(n,d){n.open=(d===0);});render();});
+document.getElementById('zIn').addEventListener('click',function(){zoom=clampZ(zoom+.1);render();});
+document.getElementById('zOut').addEventListener('click',function(){zoom=clampZ(zoom-.1);render();});
+document.getElementById('reset').addEventListener('click',function(){
+  var snap=JSON.stringify(root),fsnap=JSON.stringify(faq);
+  root=seed();faq=seedFaq();selected=null;editing=null;faqEdit=null;render();
+  toast('Đã đặt lại sơ đồ và FAQ về mẫu','Hoàn tác',function(){root=norm(JSON.parse(snap));faq=normFaq(JSON.parse(fsnap));render();});
+});
+
+/* backup dialog */
+var dlg=document.getElementById('dlg'),dlgTxt=document.getElementById('dlgTxt'),dlgMsg=document.getElementById('dlgMsg');
+document.getElementById('backup').addEventListener('click',function(){
+  dlgTxt.value=JSON.stringify({v:12,root:root,faq:faq});dlgMsg.textContent='';
+  if(dlg.showModal)dlg.showModal();else dlg.setAttribute('open','');
+});
+document.getElementById('dlgClose').addEventListener('click',function(){dlg.close();});
+document.getElementById('dlgCopy').addEventListener('click',function(){
+  dlgTxt.focus();dlgTxt.select();
+  var ok=false;
+  try{ok=document.execCommand('copy');}catch(e){}
+  dlgMsg.textContent=ok?'Đã sao chép.':'Chưa sao chép được tự động. Hãy nhấn Ctrl+C (hoặc giữ ngón tay rồi chọn Sao chép).';
+});
+document.getElementById('dlgLoad').addEventListener('click',function(){
+  try{
+    var o=JSON.parse(dlgTxt.value);
+    var nr=norm(o.root||o);if((o.v||0)<12)migrate(nr,o.v||0);
+    root=nr;if(Array.isArray(o.faq)){faq=normFaq(o.faq);if((o.v||0)<10)fixFaq(faq);if((o.v||0)<11)addFaq11(faq);if((o.v||0)<12)addFaqRange(faq,30,31);}selected=null;editing=null;faqEdit=null;render();dlg.close();
+    toast('Đã nạp dữ liệu');
+  }catch(e){dlgMsg.textContent='Dữ liệu không hợp lệ. Hãy dán đúng đoạn văn bản đã sao lưu.';}
+});
+
+document.getElementById('view').addEventListener('scroll',hideTip);
+
+/* drag to pan (mouse only) */
+(function(){
+  var host=document.getElementById('view'),drag=null;
+  host.addEventListener('pointerdown',function(e){
+    if(view!=='map'||e.pointerType!=='mouse'||e.button!==0)return;
+    if(e.target.closest('.node'))return;
+    drag={x:e.clientX,y:e.clientY,sl:host.scrollLeft,st:host.scrollTop};
+    host.classList.add('drag');
+  });
+  window.addEventListener('pointermove',function(e){
+    if(!drag)return;
+    host.scrollLeft=drag.sl-(e.clientX-drag.x);host.scrollTop=drag.st-(e.clientY-drag.y);
+  });
+  window.addEventListener('pointerup',function(){drag=null;host.classList.remove('drag');});
+})();
+
+render();
+})();
+</script>
+</body>
+</html>
